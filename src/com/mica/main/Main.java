@@ -1,8 +1,5 @@
 package com.mica.main;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-
 import com.mica.gui.GlavniProzor;
 
 public class Main {
@@ -26,7 +23,6 @@ public class Main {
 	            ex.printStackTrace();
 	        }
 		*/
-		new Klijent("assssssssssssssaaaaaaaaaaa");
 		
 		Controller controller = new Controller();
 		GlavniProzor glavniProzor = new GlavniProzor(controller);

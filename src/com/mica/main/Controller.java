@@ -2,6 +2,7 @@ package com.mica.main;
 
 import java.awt.Point;
 import java.awt.event.MouseEvent;
+import java.io.File;
 
 import javax.swing.JOptionPane;
 
@@ -45,6 +46,10 @@ public class Controller {
 	
 	private boolean prikaziDialogTabelaAkcijaIQVrednosti;
 	
+	private boolean cekajObraduSlike;
+	
+	private Klijent klijent;
+	
 	public Controller() {
 		trenutnoStanje = new Stanje();
 		
@@ -80,7 +85,7 @@ public class Controller {
 		}
 		while(indeksPlavi >= 3 || indeksCrveni >= 3);
 		
-		resetujSveZaNovuIgru();
+		resetujSveZaNovuIgru(null);
 		glavniProzor.osveziTablu();
 		
 		algoritamPlavi = Igrac.getEnumAlgoritam(Igrac.algoritmi[indeksPlavi]);
@@ -115,6 +120,111 @@ public class Controller {
 		//glavniProzor.prikaziCheckBoxZaPrikazTabelePanel();
 	}
 	
+	public void zapocniNovuIgruSaObradomSlike() {
+		this.brojSekundiZaSpavanje = 0;
+		String[] res;
+		int indeksPlavi = 0;
+		int indeksCrveni = 0;
+		boolean postojiFajl = false;
+		
+		do {
+			res = glavniProzor.dialogZaNovuIgruSaObradomSlike();
+			
+			if(!res[0].equals("-1") && !res[1].equals("-1")) {
+				try {
+					indeksPlavi = Integer.parseInt(res[0]);
+					indeksCrveni = Integer.parseInt(res[1]);
+					
+					if(indeksPlavi >= 3 || indeksCrveni >= 3) {
+						JOptionPane.showMessageDialog(null, "Algoritam koji ste izabrali jos nije implementiran!","Nijeimplementiran...", JOptionPane.ERROR_MESSAGE);
+					}
+					else {
+						postojiFajl = new File(res[2]).isFile();
+						if(!postojiFajl) {
+							JOptionPane.showMessageDialog(null, "Ne postoji slika za odabranu putanju!", "Ne postoji slika...", JOptionPane.ERROR_MESSAGE);;	
+						}
+					}
+					
+				} catch (NumberFormatException e) {
+					indeksPlavi = -2;
+					indeksCrveni = -2;
+					JOptionPane.showMessageDialog(null, "Neispravni indeksi za algoritme!", "neispravni indeksi...", JOptionPane.ERROR_MESSAGE);;	
+				}
+				
+			}
+			else {
+				glavniProzor.dialogPocetni(null);
+			}
+		}
+		while(indeksPlavi >= 3 || indeksCrveni >= 3 || indeksPlavi == -2 || indeksCrveni == -2 || !postojiFajl);
+		
+		Algoritam algoritamPlavi = Igrac.getEnumAlgoritam(Igrac.algoritmi[indeksPlavi]);
+		Algoritam algoritamCrveni = Igrac.getEnumAlgoritam(Igrac.algoritmi[indeksCrveni]);
+		String putanjaDoSlike = res[2];
+		
+		Thread t = new Thread(new Runnable() {	
+			@Override
+			public void run() {
+				cekajObraduSlike = true;
+				
+				String odgovor = null;
+				klijent = new Klijent();
+				
+				do{ // cekamo dok ne dobijemo odgovor ili dok korisnik ne odustane od cekanja
+					try {
+						odgovor = klijent.posaljiPutanjuDoSlikeISacekajOdgovor(putanjaDoSlike);
+					} 
+					catch (Exception e) {}
+					
+					if(odgovor != null) {
+						if(cekajObraduSlike) {
+							cekajObraduSlike = false;
+							glavniProzor.ukloniDialogZaCekanje();
+						}
+						else odgovor = null; // korisnik je ranije odusatao
+					}
+				}
+				while(cekajObraduSlike);
+				
+				if(odgovor != null) {
+					resetujSveZaNovuIgru(odgovor);
+					glavniProzor.osveziTablu();
+					
+					if(algoritamPlavi == Algoritam.RL || algoritamCrveni == Algoritam.RL) {
+						koristioReinforcmentLearning = true;
+						glavniProzor.prikaziPanelZaEpsilon();
+						glavniProzor.prikaziCheckBoxZaPrikazTabelePanel();
+					}
+					
+					trenutnoStanje.getPlaviIgrac().setAlgoritam(algoritamPlavi);
+					trenutnoStanje.getCrveniIgrac().setAlgoritam(algoritamCrveni);
+					
+					brojPoteza = 1;
+					
+					rezimIgre = RezimIgre.NOVA_IGRA;
+					
+					if(algoritamPlavi != Algoritam.COVEK) {
+						glavniProzor.prikaziPanelZaSekunde();
+						// plavi uvek prvi pocinje igru, zato ispitujemo njegov algoritam
+						boteOdigrajPotez(algoritamPlavi); 
+					}
+					else if(algoritamCrveni != Algoritam.COVEK) glavniProzor.prikaziPanelZaSekunde();
+					//else glavniProzor.sakrijPanelZaSekunde();
+					
+					glavniProzor.prikaziNaPotezuPanel();
+					glavniProzor.prikaziPanelZaBrojPlavihNepostavljenihFigura();
+					glavniProzor.prikaziPanelZaBrojPlavihPreostalihFigura();
+					glavniProzor.prikaziPanelZaBrojCrvenihNepostavljenihFigura();
+					glavniProzor.prikaziPanelZaBrojCrvenihPreostalihFigura();
+					//glavniProzor.prikaziCheckBoxZaPrikazTabelePanel();
+				}
+			}
+		});
+		t.start();
+		
+		glavniProzor.prikaziDialogZaCekanje();
+	}
+	
 	public void zapocniTrening() {
 		this.brojSekundiZaSpavanje = 0;
 		int[] indeksi;
@@ -140,7 +250,7 @@ public class Controller {
 		}
 		while(indeksPlavi >= 2 || indeksCrveni >= 2);
 		
-		resetujSveZaNovuIgru();
+		resetujSveZaNovuIgru(null);
 		glavniProzor.osveziTablu();
 		
 		this.algoritamPlaviTrening = Igrac.getEnumAlgoritam(Igrac.algoritmiZaTrening[indeksPlavi]);
@@ -177,12 +287,15 @@ public class Controller {
 		// plavi uvek prvi pocinje igru, zato ispitujemo njegov algoritam
 	}
 	
-	public void resetujSveZaNovuIgru() {
+	public void resetujSveZaNovuIgru(String stanjeStr) {
 		this.proveriKrajIgre = false;
 		brojPoteza = 1;
 		
-		TipPolja igracNaPotezu = TipPolja.PLAVO;
-		trenutnoStanje = new Stanje(igracNaPotezu);
+		if(stanjeStr != null) trenutnoStanje = new Stanje(stanjeStr);
+		else {
+			TipPolja igracNaPotezu = TipPolja.PLAVO;
+			trenutnoStanje = new Stanje(igracNaPotezu);
+		}
 		
 		glavniProzor.resetujPomocniPanelZaNovuIgru(trenutnoStanje);
 	}
@@ -300,7 +413,7 @@ public class Controller {
 					}
 					else {
 						// spremi sve i zapocni sledecu partiju u okviru treninga 
-						resetujSveZaNovuIgru();
+						resetujSveZaNovuIgru(null);
 						glavniProzor.osveziTablu();
 					
 						trenutnoStanje.getPlaviIgrac().setAlgoritam(this.algoritamPlaviTrening);
@@ -920,6 +1033,26 @@ public class Controller {
 	public void setPrikaziDialogTabelaAkcijaIQVrednosti(boolean prikaziDialogTabelaAkcijaIQVrednosti, boolean azurirajVrednostUPomocnomPanelu) {
 		this.prikaziDialogTabelaAkcijaIQVrednosti = prikaziDialogTabelaAkcijaIQVrednosti;
 		if(azurirajVrednostUPomocnomPanelu) glavniProzor.podesiCheckBoxZaPrikazTabele(prikaziDialogTabelaAkcijaIQVrednosti);
+	}
+
+	public void pretraziPutanjuDoSlike() {
+		glavniProzor.dialogZaPretraguFajlova();
+		
+	}
+
+	public void odustaniOdObradeSlike() {
+		cekajObraduSlike = false;
+		/*if(klijent != null) {
+				try {
+					klijent.stop();
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+		}
+		else System.out.println("klijent == null");*/
+		//String poruka = "Trenutno nije moguce obraditi sliku!";
+		glavniProzor.dialogPocetni(null);
 	}
 	
 }

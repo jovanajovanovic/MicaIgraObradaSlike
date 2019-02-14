@@ -94,6 +94,48 @@ public class Stanje {
 		else this.selektovanoPolje = null;
 	}
 
+	public Stanje(String stanjeStr) {
+		String[] tokens = stanjeStr.split("\\|");
+		String[] tokensNepostavljeneFigure = tokens[1].split(",");
+		String[] tokensPravougonici = tokens[0].split(";");
+		
+		int brojPlavihNepostavljenihFigura = Integer.parseInt(tokensNepostavljeneFigure[0]);
+		int brojCrvenihNepostavljenihFigura = Integer.parseInt(tokensNepostavljeneFigure[1]);
+		
+		if(brojPlavihNepostavljenihFigura >= brojCrvenihNepostavljenihFigura) this.igracNaPotezu = TipPolja.PLAVO;
+		else this.igracNaPotezu = TipPolja.CRVENO;
+		
+		int brojPlavihPreostalihFigura = brojPlavihNepostavljenihFigura;
+		int brojCrvenihPreostalihFigura = brojCrvenihNepostavljenihFigura;
+		
+		polja = new Polje[Controller.BROJ_KRUGOVA][Controller.BROJ_POLJA_U_KRUGU];
+		
+		String[] tokensPolja;
+		int tipPoljaInt;
+		TipPolja tipPolja;
+		
+		for (int i = 0; i < Controller.BROJ_KRUGOVA; i++) {
+			tokensPolja = tokensPravougonici[i].split(",");
+			for (int j = 0; j < Controller.BROJ_POLJA_U_KRUGU; j++) {
+				tipPoljaInt = Integer.parseInt(tokensPolja[j]);
+				tipPolja = TipPolja.values()[tipPoljaInt];
+				
+				if(tipPolja == TipPolja.PLAVO) brojPlavihPreostalihFigura++;
+				else if(tipPolja == TipPolja.CRVENO) brojCrvenihPreostalihFigura++;
+				
+				polja[i][j] = new Polje(i, j, tipPolja);
+			}
+			
+		}
+		
+		this.plaviIgrac = new Igrac("Plavi", TipPolja.PLAVO, brojPlavihNepostavljenihFigura, brojPlavihPreostalihFigura);
+		this.crveniIgrac = new Igrac("Crveni", TipPolja.CRVENO, brojCrvenihNepostavljenihFigura, brojCrvenihPreostalihFigura);
+		
+		this.pojedi = false;
+		
+		this.score = 0;
+	}
+
 	public static Stanje kreirajStanje(String[] tokeniStanje) {
 		String[] tokeniIgrac, tokeni;
 		String tokenPolje;

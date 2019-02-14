@@ -19,10 +19,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import javax.imageio.ImageIO;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JDialog;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -31,6 +33,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JSpinner;
 import javax.swing.JSplitPane;
 import javax.swing.JTable;
+import javax.swing.JTextField;
 import javax.swing.RowSorter;
 import javax.swing.SortOrder;
 import javax.swing.SpinnerNumberModel;
@@ -38,6 +41,8 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.RowSorterEvent;
 import javax.swing.event.RowSorterListener;
+import javax.swing.filechooser.FileFilter;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
@@ -55,12 +60,17 @@ import com.mica.main.TipPolja;
 public class GlavniProzor extends JFrame {
 	
 	private static final Color LIGHT_BLUE =  new Color(0,182,155);
+	private static final Color ORANGE =  new Color(255,165,0);
 	private Tabla tabla;
 	private PomocniPanel pomocniPanel;
 	
+	private JTextField putanjaDoSlike;
+	
 	private Controller controller;
 	
-	private static Dimension SIZE_SCREEN = Toolkit.getDefaultToolkit().getScreenSize();
+	private DialogZaCekanje dialogZaCekanje;
+	
+	public static Dimension SIZE_SCREEN = Toolkit.getDefaultToolkit().getScreenSize();
 	
 	public GlavniProzor(Controller controller) {
 		super("Mica");
@@ -179,6 +189,9 @@ public class GlavniProzor extends JFrame {
 		JButton btnNovaIgra = new JButton("Nova Igra");
 		btnNovaIgra.setBackground(Color.GREEN);
 		
+		JButton btnNovaIgraObradaSlike = new JButton("Nova Igra (Obrada Slike)");
+		btnNovaIgraObradaSlike.setBackground(ORANGE);
+		
 		JButton btnTrening = new JButton("Trening");
 		btnTrening.setBackground(LIGHT_BLUE);
 		
@@ -196,6 +209,18 @@ public class GlavniProzor extends JFrame {
 				sakrijCheckBoxZaPrikazTabelePanel();
 				dialog.setVisible(false);
 				controller.zapocniNovuIgru();
+			}
+		});
+		
+		btnNovaIgraObradaSlike.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				sakrijPanelZaSekunde();
+				sakrijPanelZaEpsilon();
+				sakrijCheckBoxZaPrikazTabelePanel();
+				dialog.setVisible(false);
+				controller.zapocniNovuIgruSaObradomSlike();
 			}
 		});
 		
@@ -282,15 +307,25 @@ public class GlavniProzor extends JFrame {
 		
 		JPanel dugmadPanel = new JPanel(new FlowLayout());
 		dugmadPanel.add(btnNovaIgra);
+		dugmadPanel.add(btnNovaIgraObradaSlike);
 		dugmadPanel.add(btnTrening);
 		dugmadPanel.add(btnIzlaz);
 		JPanel southPanel = new JPanel(new BorderLayout());
 		southPanel.add(dugmadPanel, BorderLayout.NORTH);
 		southPanel.add(new JLabel("    "), BorderLayout.SOUTH);
 		dialog.getContentPane().add(southPanel, BorderLayout.SOUTH);
-		dialog.setSize(400, height);
+		dialog.setSize(500, height);
 		dialog.setVisible(true);
 		
+	}
+	
+	public void prikaziDialogZaCekanje() {
+		dialogZaCekanje = new DialogZaCekanje(this);
+		dialogZaCekanje.setVisible(true);
+	}
+	
+	public void ukloniDialogZaCekanje() {
+		if(dialogZaCekanje != null) dialogZaCekanje.setVisible(false);
 	}
 	
 	private void izlaz() {
@@ -448,6 +483,161 @@ public class GlavniProzor extends JFrame {
 	    else {
 	    	System.out.println("Exit");
 	    	return new int[] {-1,-1};
+	    }
+  
+	}
+	
+	public String[] dialogZaNovuIgruSaObradomSlike() {
+		GridBagLayout gridBagLayoutMainPanel = new GridBagLayout();
+		JPanel mainPanel = new JPanel(gridBagLayoutMainPanel);
+		
+		GridBagLayout gridBagLayoutPanelZaComboBoxPlavog = new GridBagLayout();
+		JPanel panelZaComboBoxPlavog = new JPanel(gridBagLayoutPanelZaComboBoxPlavog);
+		
+		GridBagLayout gridBagLayoutPanelZaComboBoxCrvenog = new GridBagLayout();
+		JPanel panelZaComboBoxCrvenog = new JPanel(gridBagLayoutPanelZaComboBoxCrvenog);
+		
+		GridBagLayout gridBagLayoutCheckBoxZaPrikazTabelePanel = new GridBagLayout();
+		JPanel checkBoxZaPrikazTabelePanel = new JPanel(gridBagLayoutCheckBoxZaPrikazTabelePanel);
+		
+		GridBagConstraints constraints = new GridBagConstraints();
+		constraints.weightx = 0.0;
+		constraints.anchor = GridBagConstraints.WEST;
+		
+		JLabel plaviIgracLabel = new JLabel("Plavi igrač:    ");
+		constraints.gridx = 0;
+		constraints.gridy = 0;
+		gridBagLayoutPanelZaComboBoxPlavog.setConstraints(plaviIgracLabel, constraints);
+		panelZaComboBoxPlavog.add(plaviIgracLabel);
+		
+		JComboBox<String> comboPlavi = new JComboBox<String>(Igrac.algoritmi);
+		constraints.gridx = 1;
+		constraints.gridy = 0;
+		gridBagLayoutPanelZaComboBoxPlavog.setConstraints(comboPlavi, constraints);
+		panelZaComboBoxPlavog.add(comboPlavi);
+		
+		JLabel crveniIgracLabel = new JLabel("Crveni igrač: ");
+	    constraints.gridx = 0;
+		constraints.gridy = 0;
+		gridBagLayoutPanelZaComboBoxCrvenog.setConstraints(crveniIgracLabel, constraints);
+		panelZaComboBoxCrvenog.add(crveniIgracLabel);
+		
+		JComboBox<String> comboCrveni = new JComboBox<String>(Igrac.algoritmi);
+		constraints.gridx = 1;
+		constraints.gridy = 0;
+		gridBagLayoutPanelZaComboBoxCrvenog.setConstraints(comboCrveni, constraints);
+		panelZaComboBoxCrvenog.add(comboCrveni);
+		
+		JPanel panelZaPutanjuDoSlike = new JPanel(new FlowLayout());
+		JLabel putanjaDoSlikeLabel = new JLabel("Putanja do slike:");
+		putanjaDoSlike = new JTextField(50);
+		putanjaDoSlike.setText("C:\\Users\\JOVO\\Desktop\\face.jpg");
+		JButton pretrazi = new JButton("Pretrazi...");
+		pretrazi.addActionListener(new ActionListener() {
+					
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				controller.pretraziPutanjuDoSlike();
+			}
+		});
+		panelZaPutanjuDoSlike.add(putanjaDoSlikeLabel);
+		panelZaPutanjuDoSlike.add(putanjaDoSlike);
+		panelZaPutanjuDoSlike.add(pretrazi);
+		
+		JCheckBox checkBoxZaPrikazTabele = new JCheckBox("Prikazuj dialog sa tabelom za akcije i Q-vrednosti", true);
+		checkBoxZaPrikazTabele.addChangeListener(new ChangeListener() {
+			
+			@Override
+			public void stateChanged(ChangeEvent e) {
+				controller.setPrikaziDialogTabelaAkcijaIQVrednosti(checkBoxZaPrikazTabele.isSelected(), true);
+				
+			}
+		});
+	    constraints.gridx = 0;
+		constraints.gridy = 0;
+		gridBagLayoutCheckBoxZaPrikazTabelePanel.setConstraints(checkBoxZaPrikazTabele, constraints);
+		checkBoxZaPrikazTabelePanel.add(checkBoxZaPrikazTabele);
+		
+		
+		constraints.insets = new Insets(0,0,2,0);
+		
+		
+		constraints.gridx = 0;
+		constraints.gridy = 0;
+		gridBagLayoutMainPanel.setConstraints(panelZaComboBoxPlavog, constraints);
+		mainPanel.add(panelZaComboBoxPlavog);
+		
+		constraints.gridx = 0;
+		constraints.gridy = 1;
+		gridBagLayoutMainPanel.setConstraints(panelZaComboBoxCrvenog, constraints);
+		mainPanel.add(panelZaComboBoxCrvenog);
+	 
+		constraints.gridx = 0;
+		constraints.gridy = 2;
+		gridBagLayoutMainPanel.setConstraints(panelZaPutanjuDoSlike, constraints);
+		mainPanel.add(panelZaPutanjuDoSlike);
+		
+	    JSpinner spinnerSekunde = new JSpinner(new SpinnerNumberModel(0, 0, 60, 1));
+	    JPanel panelZaSekunde = pomocniPanel.napraviPanelZaSekunde(spinnerSekunde, true);
+	    constraints.gridx = 0;
+		constraints.gridy = 3;
+		gridBagLayoutMainPanel.setConstraints(panelZaSekunde, constraints);
+		mainPanel.add(panelZaSekunde);
+	    ukluciIliIskluciPanelZaSekunde(panelZaSekunde, Igrac.getEnumAlgoritam((String) comboPlavi.getSelectedItem()), Igrac.getEnumAlgoritam((String) comboCrveni.getSelectedItem()));
+	    
+	    JSpinner spinnerEpsilon = new JSpinner(new SpinnerNumberModel(0.10, 0.00, 1.00, 0.01));
+	    spinnerEpsilon.getEditor().setPreferredSize(new Dimension(25, 15));
+	    JPanel panelZaEpsilon = pomocniPanel.napraviPanelZaEpsilon(spinnerEpsilon, true, false);
+	    constraints.gridx = 0;
+		constraints.gridy = 4;
+		gridBagLayoutMainPanel.setConstraints(panelZaEpsilon, constraints);
+		mainPanel.add(panelZaEpsilon);
+	    ukluciIliIskluciPanelZaEpsilon(panelZaEpsilon, Igrac.getEnumAlgoritam((String) comboPlavi.getSelectedItem()), Igrac.getEnumAlgoritam((String) comboCrveni.getSelectedItem()));
+	    
+	    constraints.gridx = 0;
+		constraints.gridy = 5;
+		gridBagLayoutMainPanel.setConstraints(checkBoxZaPrikazTabelePanel, constraints);
+		mainPanel.add(checkBoxZaPrikazTabelePanel);
+	    ukluciIliIskluciCheckBoxZaPrikazTabelePanel(checkBoxZaPrikazTabelePanel, Igrac.getEnumAlgoritam((String) comboPlavi.getSelectedItem()), Igrac.getEnumAlgoritam((String) comboCrveni.getSelectedItem()));
+	    
+	    comboPlavi.addItemListener(new ItemListener() {
+			
+			@Override
+			public void itemStateChanged(ItemEvent e) {
+				ukluciIliIskluciPanelZaSekunde(panelZaSekunde, Igrac.getEnumAlgoritam((String) comboPlavi.getSelectedItem()), Igrac.getEnumAlgoritam((String) comboCrveni.getSelectedItem()));
+				ukluciIliIskluciPanelZaEpsilon(panelZaEpsilon, Igrac.getEnumAlgoritam((String) comboPlavi.getSelectedItem()), Igrac.getEnumAlgoritam((String) comboCrveni.getSelectedItem()));
+				ukluciIliIskluciCheckBoxZaPrikazTabelePanel(checkBoxZaPrikazTabelePanel, Igrac.getEnumAlgoritam((String) comboPlavi.getSelectedItem()), Igrac.getEnumAlgoritam((String) comboCrveni.getSelectedItem()));
+			}
+		});
+	    comboCrveni.addItemListener(new ItemListener() {
+			
+			@Override
+			public void itemStateChanged(ItemEvent e) {
+				ukluciIliIskluciPanelZaSekunde(panelZaSekunde, Igrac.getEnumAlgoritam((String) comboPlavi.getSelectedItem()), Igrac.getEnumAlgoritam((String) comboCrveni.getSelectedItem()));
+				ukluciIliIskluciPanelZaEpsilon(panelZaEpsilon, Igrac.getEnumAlgoritam((String) comboPlavi.getSelectedItem()), Igrac.getEnumAlgoritam((String) comboCrveni.getSelectedItem()));
+				ukluciIliIskluciCheckBoxZaPrikazTabelePanel(checkBoxZaPrikazTabelePanel, Igrac.getEnumAlgoritam((String) comboPlavi.getSelectedItem()), Igrac.getEnumAlgoritam((String) comboCrveni.getSelectedItem()));
+			}
+		});
+	    
+	    String[] options = { "Počni Novu Igru"};
+
+	    String title = "Nova Igra Sa Obradom Slike...";
+	    int res = JOptionPane.showOptionDialog(null, mainPanel, title,
+	        JOptionPane.DEFAULT_OPTION, JOptionPane.PLAIN_MESSAGE, null, options,
+	        options[0]);
+
+	    if (res >= 0) {
+	    	int selektovaniIndeksPlavi = comboPlavi.getSelectedIndex();
+		    int selektovaniIndeksCrveni = comboCrveni.getSelectedIndex();
+		  
+		    System.out.println("Plavi igrač: " + Igrac.algoritmi[selektovaniIndeksPlavi]);
+		    System.out.println("Crveni igrač: " + Igrac.algoritmi[selektovaniIndeksCrveni]);
+		    
+		    return new String[] {""+selektovaniIndeksPlavi, ""+selektovaniIndeksCrveni, putanjaDoSlike.getText()};
+	    }
+	    else {
+	    	System.out.println("Exit");
+	    	return new String[] {"-1","-1", ""};
 	    }
   
 	}
@@ -898,6 +1088,23 @@ public class GlavniProzor extends JFrame {
 	
 	public void setEpsilonUPomocnomPanelu(double epsilon) {
 		pomocniPanel.setEpsilon(epsilon);
+	}
+
+	public void dialogZaPretraguFajlova() {
+		JFileChooser c = new JFileChooser(putanjaDoSlike.getText());
+		FileFilter imageFilter = new FileNameExtensionFilter("Image files", ImageIO.getReaderFileSuffixes());
+		c.setFileFilter(imageFilter);
+		c.setAcceptAllFileFilterUsed(false);
+	      // Demonstrate "Open" dialog:
+	      int rVal = c.showOpenDialog(this);
+	      if (rVal == JFileChooser.APPROVE_OPTION) {
+	        putanjaDoSlike.setText(c.getSelectedFile().getAbsolutePath());
+	        //dir.setText(c.getCurrentDirectory().toString());
+	      }
+	      /*if (rVal == JFileChooser.CANCEL_OPTION) {
+	    	putanjaDoSlike.setText("You pressed cancel");
+	        dir.setText("");
+	      }*/
 	}
 	
 }
