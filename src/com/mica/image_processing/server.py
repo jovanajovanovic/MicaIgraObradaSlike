@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+from .processing import *
 import socket
 import time
 
@@ -25,13 +25,14 @@ def start_server():
                     break
                 
                 print("Primljena putanja: " + str(data))
-                
-                 
+
+                #pozvana funckcija za procesiranje slike
+                data = start_processing(str(data))
                 # Wait for 2 seconds
                 # simulation
-                time.sleep(2)
+              #  time.sleep(2)
                 
-                data = "0,1,1,2,0,2,1,0;2,1,2,0,0,0,1,2;0,0,0,1,0,0,0,0|3,4".encode()
+              #  data = "0,1,1,2,0,2,1,0;2,1,2,0,0,0,1,2;0,0,0,1,0,0,0,0|3,4".encode()
                 print("Poslati odgovor: " + str(data))
                 conn.sendall(data)
             
