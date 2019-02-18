@@ -51,7 +51,6 @@ import com.mica.algorithms.Algoritam;
 import com.mica.main.Controller;
 import com.mica.main.Igrac;
 import com.mica.main.PoljeAkcija;
-import com.mica.main.RadSaPodacima;
 import com.mica.main.Stanje;
 import com.mica.main.TipPolja;
 
@@ -131,13 +130,13 @@ public class GlavniProzor extends JFrame {
 			
 			@Override
 			public void windowClosing(WindowEvent e) {
-				izlaz();
+				controller.izlaz();
 				
 			}
 			
 			@Override
 			public void windowClosed(WindowEvent e) {
-				// TODO Auto-generated method stub
+				ukloniDialogZaCekanje();
 				
 			}
 			
@@ -241,7 +240,7 @@ public class GlavniProzor extends JFrame {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				dialog.setVisible(false);
-				izlaz();
+				controller.izlaz();
 			}
 		});
 		
@@ -273,7 +272,7 @@ public class GlavniProzor extends JFrame {
 			
 			@Override
 			public void windowClosing(WindowEvent e) {
-				izlaz();
+				controller.izlaz();
 			}
 			
 			@Override
@@ -319,38 +318,17 @@ public class GlavniProzor extends JFrame {
 		
 	}
 	
-	public void prikaziDialogZaCekanje() {
-		dialogZaCekanje = new DialogZaCekanje(this);
+	public void prikaziDialogZaCekanje(String poruka, boolean bezDugmeta) {
+		dialogZaCekanje = new DialogZaCekanje(this, poruka, bezDugmeta);
 		dialogZaCekanje.setVisible(true);
 	}
 	
 	public void ukloniDialogZaCekanje() {
-		if(dialogZaCekanje != null) dialogZaCekanje.setVisible(false);
-	}
-	
-	private void izlaz() {
-		if(controller.isKoristioReinforcmentLearning()) {
-			boolean predjenaGranica = controller.getReinforcementLearning().daLiJePredjenaGranicaZaPrelazNaAproksimaciju();
-				
-			int res = dialogZaCuvanjeQVrednostiITezina(predjenaGranica);
-			if (res == 2 || res == -1) {
-				System.out.println("Nema cuvanja");
-				return;
-			}
-			
-			if (res == 0 || res == 1) {
-				if(res == 0) {
-					RadSaPodacima.sacuvajStanjaAkcijeIQVrednostiUFajl(controller.getReinforcementLearning().getqVrednosti());
-					
-					if(predjenaGranica) {
-						RadSaPodacima.sacuvajTezineUFajl(controller.getReinforcementLearning().getTezine());
-					}
-				}
-
+		if(dialogZaCekanje != null) {
+			if(dialogZaCekanje.isVisible()) {
+				dialogZaCekanje.setVisible(false);
 			}
 		}
-				
-		System.exit(0);
 	}
 	
 	public int[] dialogZaNovuIgru() {
@@ -394,7 +372,7 @@ public class GlavniProzor extends JFrame {
 		gridBagLayoutPanelZaComboBoxCrvenog.setConstraints(comboCrveni, constraints);
 		panelZaComboBoxCrvenog.add(comboCrveni);
 		
-		JCheckBox checkBoxZaPrikazTabele = new JCheckBox("Prikazuj dialog sa tabelom za akcije i Q-vrednosti", true);
+		JCheckBox checkBoxZaPrikazTabele = new JCheckBox("Prikazuj dialog sa tabelom za akcije i Q-vrednosti (samo za RL)", true);
 		checkBoxZaPrikazTabele.addChangeListener(new ChangeListener() {
 			
 			@Override
@@ -544,7 +522,7 @@ public class GlavniProzor extends JFrame {
 		panelZaPutanjuDoSlike.add(putanjaDoSlike);
 		panelZaPutanjuDoSlike.add(pretrazi);
 		
-		JCheckBox checkBoxZaPrikazTabele = new JCheckBox("Prikazuj dialog sa tabelom za akcije i Q-vrednosti", true);
+		JCheckBox checkBoxZaPrikazTabele = new JCheckBox("Prikazuj dialog sa tabelom za akcije i Q-vrednosti (samo za RL)", true);
 		checkBoxZaPrikazTabele.addChangeListener(new ChangeListener() {
 			
 			@Override
@@ -660,7 +638,7 @@ public class GlavniProzor extends JFrame {
 	private void ukluciIliIskluciPanelZaEpsilon(JPanel panelZaEpsilon, Algoritam algoritamPlavi, Algoritam algoritamCrveni) {
 		boolean enable;
 		
-		if(algoritamPlavi == Algoritam.RL || algoritamCrveni == Algoritam.RL) {
+		if(algoritamPlavi == Algoritam.RL || algoritamCrveni == Algoritam.RL || algoritamPlavi == Algoritam.DEEP_RL || algoritamCrveni == Algoritam.DEEP_RL) {
 			enable = true;
 		}
 		else {
@@ -684,6 +662,9 @@ public class GlavniProzor extends JFrame {
 		}
 		
 		for (Component component : checkBoxZaPrikazTabelePanel.getComponents()) {
+			if(component instanceof JCheckBox) {
+				((JCheckBox) component).setSelected(enable);
+			}
 			component.setEnabled(enable);
 		}
 	}
@@ -744,7 +725,7 @@ public class GlavniProzor extends JFrame {
 		gridBagLayoutBrojPartijaPanel.setConstraints(spinnerBrojPartija, constraints);
 		panelZaBrojPartija.add(spinnerBrojPartija);
 		
-		JCheckBox checkBoxZaPrikazTabele = new JCheckBox("Prikazuj dialog sa tabelom za akcije i Q-vrednosti", true);
+		JCheckBox checkBoxZaPrikazTabele = new JCheckBox("Prikazuj dialog sa tabelom za akcije i Q-vrednosti (samo za RL)", true);
 		checkBoxZaPrikazTabele.addChangeListener(new ChangeListener() {
 			
 			@Override
@@ -787,24 +768,24 @@ public class GlavniProzor extends JFrame {
 	    JSpinner spinnerEpsilon = new JSpinner(new SpinnerNumberModel(0.10, 0.00, 1.00, 0.01));
 	    spinnerEpsilon.getEditor().setPreferredSize(new Dimension(25, 15));
 	    JPanel panelZaEpsilon = pomocniPanel.napraviPanelZaEpsilon(spinnerEpsilon, true, false);
+	    ukluciIliIskluciPanelZaEpsilon(panelZaEpsilon, Igrac.getEnumAlgoritam((String) comboPlavi.getSelectedItem()), Igrac.getEnumAlgoritam((String) comboCrveni.getSelectedItem()));
 	    constraints.gridx = 0;
 		constraints.gridy = 4;
 		gridBagLayoutMainPanel.setConstraints(panelZaEpsilon, constraints);
 		mainPanel.add(panelZaEpsilon);
-	    ukluciIliIskluciPanelZaEpsilon(panelZaEpsilon, Igrac.getEnumAlgoritam((String) comboPlavi.getSelectedItem()), Igrac.getEnumAlgoritam((String) comboCrveni.getSelectedItem()));
 	    
 	    constraints.gridx = 0;
 		constraints.gridy = 5;
+		ukluciIliIskluciCheckBoxZaPrikazTabelePanel(panelZaEpsilon, Igrac.getEnumAlgoritam((String) comboPlavi.getSelectedItem()), Igrac.getEnumAlgoritam((String) comboCrveni.getSelectedItem()));
 		gridBagLayoutMainPanel.setConstraints(checkBoxZaPrikazTabelePanel, constraints);
 		mainPanel.add(checkBoxZaPrikazTabelePanel);
-	    ukluciIliIskluciCheckBoxZaPrikazTabelePanel(panelZaEpsilon, Igrac.getEnumAlgoritam((String) comboPlavi.getSelectedItem()), Igrac.getEnumAlgoritam((String) comboCrveni.getSelectedItem()));
 	    
 	    comboPlavi.addItemListener(new ItemListener() {
 			
 			@Override
 			public void itemStateChanged(ItemEvent e) {
 				ukluciIliIskluciPanelZaEpsilon(panelZaEpsilon, Igrac.getEnumAlgoritam((String) comboPlavi.getSelectedItem()), Igrac.getEnumAlgoritam((String) comboCrveni.getSelectedItem()));
-				ukluciIliIskluciCheckBoxZaPrikazTabelePanel(panelZaEpsilon, Igrac.getEnumAlgoritam((String) comboPlavi.getSelectedItem()), Igrac.getEnumAlgoritam((String) comboCrveni.getSelectedItem()));
+				ukluciIliIskluciCheckBoxZaPrikazTabelePanel(checkBoxZaPrikazTabelePanel, Igrac.getEnumAlgoritam((String) comboPlavi.getSelectedItem()), Igrac.getEnumAlgoritam((String) comboCrveni.getSelectedItem()));
 			    
 			}
 		});
@@ -813,7 +794,7 @@ public class GlavniProzor extends JFrame {
 			@Override
 			public void itemStateChanged(ItemEvent e) {
 				ukluciIliIskluciPanelZaEpsilon(panelZaEpsilon, Igrac.getEnumAlgoritam((String) comboPlavi.getSelectedItem()), Igrac.getEnumAlgoritam((String) comboCrveni.getSelectedItem()));
-				ukluciIliIskluciCheckBoxZaPrikazTabelePanel(panelZaEpsilon, Igrac.getEnumAlgoritam((String) comboPlavi.getSelectedItem()), Igrac.getEnumAlgoritam((String) comboCrveni.getSelectedItem()));
+				ukluciIliIskluciCheckBoxZaPrikazTabelePanel(checkBoxZaPrikazTabelePanel, Igrac.getEnumAlgoritam((String) comboPlavi.getSelectedItem()), Igrac.getEnumAlgoritam((String) comboCrveni.getSelectedItem()));
 			    
 			}
 		});
@@ -844,8 +825,10 @@ public class GlavniProzor extends JFrame {
 	}
 
 	public int dialogZaCuvanjeQVrednostiITezina(boolean predjenaGranicaZaPrelazNaAproksimaciju) {
-		String poruka = "Da li želite da sačuvate nove Q-vrednosti";
-		if(predjenaGranicaZaPrelazNaAproksimaciju) poruka += " i tezine";
+		String poruka = "Da li želite da sačuvate nove ";
+		if(predjenaGranicaZaPrelazNaAproksimaciju) poruka += "tezine";
+		else poruka += "Q-vrednosti";
+		
 		poruka += "?";
 		
 		String naslov = "Čuvanje Q-vrednosti...";

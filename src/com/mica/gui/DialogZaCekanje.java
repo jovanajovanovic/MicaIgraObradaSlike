@@ -15,12 +15,17 @@ import javax.swing.JProgressBar;;
 @SuppressWarnings("serial")
 public class DialogZaCekanje extends JDialog {
 
-	public DialogZaCekanje(GlavniProzor glavniProzor) {
+	public DialogZaCekanje(GlavniProzor glavniProzor, String poruka, boolean bezDugmeta) {
 		super(glavniProzor, "Cekanje", true);
 		GridBagLayout gbl = new GridBagLayout();
 		setLayout(gbl);
 		setUndecorated(true);
-		setSize(250, 120);
+		
+		int height;
+		if(bezDugmeta) height = 90;
+		else height = 120;
+		
+		setSize(250, height);
 		setLocation(SIZE_SCREEN.width/3 - 75, SIZE_SCREEN.height/3 + 60);
 
         JProgressBar progressBar = new JProgressBar(0, 100);
@@ -28,18 +33,7 @@ public class DialogZaCekanje extends JDialog {
         //progressBar.setBorderPainted(true);
         progressBar.setIndeterminate(true);
 
-        JLabel labelMolimSacekajte = new JLabel("Molimo Vas da sacekate...");
-        
-        JButton buttonOdustani = new JButton("Odustani");
-        buttonOdustani.addActionListener(new ActionListener() {
-			
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				setVisible(false);
-				glavniProzor.getController().odustaniOdObradeSlike();
-			}
-		});
-
+        JLabel labelMolimSacekajte = new JLabel(poruka);
         
         GridBagConstraints constraints = new GridBagConstraints();
 		constraints.weightx = 0.0;
@@ -54,16 +48,28 @@ public class DialogZaCekanje extends JDialog {
 		gbl.setConstraints(progressBar, constraints);
 		getContentPane().add(progressBar);
 		
-		constraints.gridx = 0;
-		constraints.gridy = 2;
-		JLabel label = new JLabel("     ");
-		gbl.setConstraints(label, constraints);
-		getContentPane().add(label);
+		if(!bezDugmeta) {
+			constraints.gridx = 0;
+			constraints.gridy = 2;
+			JLabel label = new JLabel("     ");
+			gbl.setConstraints(label, constraints);
+			getContentPane().add(label);
 		
-		constraints.gridx = 0;
-		constraints.gridy = 3;
-		gbl.setConstraints(buttonOdustani, constraints);
-		getContentPane().add(buttonOdustani);
+			JButton buttonOdustani = new JButton("Odustani");
+	        buttonOdustani.addActionListener(new ActionListener() {
+				
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					setVisible(false);
+					glavniProzor.getController().odustaniOdObradeSlike();
+				}
+			});
+			
+			constraints.gridx = 0;
+			constraints.gridy = 3;
+			gbl.setConstraints(buttonOdustani, constraints);
+			getContentPane().add(buttonOdustani);
+		}
 
 	}
 }

@@ -1,5 +1,5 @@
 package com.mica.algorithms;
 
 public enum Algoritam {
-	COVEK, RL, MINI_MAX
+	COVEK, RL, MINI_MAX, DEEP_RL
 }

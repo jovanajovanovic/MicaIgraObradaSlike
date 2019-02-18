@@ -1,5 +1,6 @@
 package com.mica.main;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 
 public class Stanje {
@@ -156,23 +157,33 @@ public class Stanje {
 			}
 			
 			tokeniIgrac = tokeniStanje[1].trim().split(";");
-			if(tokeniIgrac.length != 4) return null;
+			//if(tokeniIgrac.length != 4) return null;
+			if(tokeniIgrac.length != 3) return null;
 			plaviIgrac = Igrac.kreirajIgraca(tokeniIgrac, polja);
 			if(plaviIgrac == null) return null;
 			
 			tokeniIgrac = tokeniStanje[2].trim().split(";");
-			if(tokeniIgrac.length != 4) return null;
+			//if(tokeniIgrac.length != 4) return null;
+			if(tokeniIgrac.length != 3) return null;
 			crveniIgrac = Igrac.kreirajIgraca(tokeniIgrac, polja);
 			if(crveniIgrac == null) return null;
 			
 			igracNaPotezu = TipPolja.values()[Integer.parseInt(tokeniStanje[3].trim())];
 			
-			String[] tokeniSelektovanoPolje = tokeniStanje[4].trim().split(",");
-			int x = Integer.parseInt(tokeniSelektovanoPolje[0].trim());
-			int y = Integer.parseInt(tokeniSelektovanoPolje[1].trim());
+			//String[] tokeniSelektovanoPolje = tokeniStanje[4].trim().split(",");
+			//int x = Integer.parseInt(tokeniSelektovanoPolje[0].trim());
+			//int y = Integer.parseInt(tokeniSelektovanoPolje[1].trim());
+			//Polje selektovanoPolje;
+			//if(x == -1 && y == -1) selektovanoPolje = null;
+			//else selektovanoPolje = polja[x][y];
 			Polje selektovanoPolje;
-			if(x == -1 && y == -1) selektovanoPolje = null;
-			else selektovanoPolje = polja[x][y];
+			int a = Integer.parseInt(tokeniStanje[4].trim());
+			if(a == -1) selektovanoPolje = null;
+			else {
+				int x = a / Controller.BROJ_POLJA_U_KRUGU;
+				int y = a % Controller.BROJ_POLJA_U_KRUGU;
+				selektovanoPolje = polja[x][y];
+			}
 			
 			return new Stanje(polja, igracNaPotezu, plaviIgrac, crveniIgrac, selektovanoPolje);
 		}
@@ -378,12 +389,12 @@ public class Stanje {
 		score = 0.0;
 		Rezultat rezultat = krajIgre();
 		if(rezultat == null) {
-			/*if(igracNaPotezu == TipPolja.PLAVO) {
+			if(igracNaPotezu == TipPolja.PLAVO) {
 				score = crveniIgrac.getBrojPreostalihFigura() - plaviIgrac.getBrojPreostalihFigura();
 			}
 			else {
 				score = plaviIgrac.getBrojPreostalihFigura() - crveniIgrac.getBrojPreostalihFigura();
-			}*/
+			}
 			
 			
 			
@@ -778,17 +789,143 @@ public class Stanje {
 		sb.append(":"); sb.append(plaviIgrac); sb.append(":"); sb.append(crveniIgrac);
 		sb.append(":"); sb.append(igracNaPotezu.ordinal()); sb.append(":");
 		if(selektovanoPolje != null) {
-			sb.append(selektovanoPolje.getPozicija().getX()); 
-			sb.append(",");
-			sb.append(selektovanoPolje.getPozicija().getY());
+			//sb.append(selektovanoPolje.getPozicija().getX()); 
+			//sb.append(",");
+			//sb.append(selektovanoPolje.getPozicija().getY());
+			sb.append(selektovanoPolje.getPozicija().getX() * Controller.BROJ_POLJA_U_KRUGU + selektovanoPolje.getPozicija().getY());
 		}
 		else {
-			sb.append(-1); 
-			sb.append(",");
+			//sb.append(-1); 
+			//sb.append(",");
+			//sb.append(-1);
 			sb.append(-1);
 		}
 		
 		return sb.toString();
+	}
+	
+	public String toStringForNN() {
+		StringBuilder sb = new StringBuilder("");
+		
+		for (int i = 0; i < Controller.BROJ_KRUGOVA; i++) {
+			for (int j = 0; j < Controller.BROJ_POLJA_U_KRUGU; j++) {
+				sb.append(";");
+				sb.append(polja[i][j]);
+			}
+		}
+		
+		sb.append(";"); sb.append(plaviIgrac); sb.append(";"); sb.append(crveniIgrac);
+		sb.append(";"); sb.append(igracNaPotezu.ordinal()); sb.append(";");
+		if(selektovanoPolje != null) {
+			//sb.append(selektovanoPolje.getPozicija().getX()); 
+			//sb.append(",");
+			//sb.append(selektovanoPolje.getPozicija().getY());
+			sb.append(selektovanoPolje.getPozicija().getX() * Controller.BROJ_POLJA_U_KRUGU + selektovanoPolje.getPozicija().getY());
+		}
+		else {
+			//sb.append(-1); 
+			//sb.append(",");
+			//sb.append(-1);
+			sb.append(-1);
+		}
+		
+		int done;
+		if(krajIgre() == null) done = 0;
+		else done = 1;
+		
+		sb.append(";");
+		sb.append(done);
+		
+		return sb.substring(1);
+	}
+	
+	public ArrayList<PoljeAkcija> getMogucaSelektovanaPoljaIAkcijeZaDatoStanje() {
+		ArrayList<PoljeAkcija> mogucaSelektovanaPoljaIAkcije = new ArrayList<PoljeAkcija>();
+		
+		Polje selektovanoPolje;
+		int indeksAkcije;
+		
+		Igrac igrac;
+		TipPolja tipPoljaZaJedenje;
+        if(igracNaPotezu == TipPolja.PLAVO) {
+        	igrac = plaviIgrac;
+        	tipPoljaZaJedenje = TipPolja.CRVENO;
+        }
+        else {
+        	igrac = crveniIgrac;
+        	tipPoljaZaJedenje = TipPolja.PLAVO;
+        }
+			 
+        boolean postavljene = daLiSuSveFigurePostavljene();
+        
+        boolean sveFigureUTarama = daLiSuSvaProtivnickaPoljaUTari(tipPoljaZaJedenje);
+        
+		for (int i = 0; i < Controller.BROJ_KRUGOVA; i++) {
+			for (int j = 0; j < Controller.BROJ_POLJA_U_KRUGU; j++) {
+				selektovanoPolje = polja[i][j];
+				
+				if (pojedi) {
+					if(selektovanoPolje.getTipPolja() != igracNaPotezu && selektovanoPolje.getTipPolja() != TipPolja.ZUTO) {
+						if(!sveFigureUTarama && selektovanoPolje.isDaLiJeUTari()) continue;
+						
+						indeksAkcije = selektovanoPolje.getPozicija().getX()*Controller.BROJ_POLJA_U_KRUGU + selektovanoPolje.getPozicija().getY();
+						mogucaSelektovanaPoljaIAkcije.add(new PoljeAkcija(selektovanoPolje, Akcije.JEDENJE[indeksAkcije]));
+					}
+				} 
+				else {
+					if(postavljene) {
+						if(selektovanoPolje.getTipPolja() == igracNaPotezu) {
+							if(igrac.getBrojPreostalihFigura() == 3) {
+								proveriDaLiSuSkokoviMoguci(mogucaSelektovanaPoljaIAkcije, selektovanoPolje);
+							}
+							proveriDaLiSuGDLDAkcijeMoguce(mogucaSelektovanaPoljaIAkcije, selektovanoPolje);
+						}
+					}
+					else {
+						if(selektovanoPolje.getTipPolja() == TipPolja.ZUTO) {
+							indeksAkcije = selektovanoPolje.getPozicija().getX()*Controller.BROJ_POLJA_U_KRUGU + selektovanoPolje.getPozicija().getY();
+							mogucaSelektovanaPoljaIAkcije.add(new PoljeAkcija(selektovanoPolje, Akcije.POSTAVLJANJE[indeksAkcije]));
+						}
+					}
+				}
+				
+			}
+		}
+		
+		return mogucaSelektovanaPoljaIAkcije;
+	}
+	
+	private void proveriDaLiSuSkokoviMoguci(ArrayList<PoljeAkcija> mogucaSelektovanaPoljaIAkcije, Polje selektovanoPolje) {
+		for (int k = 0; k < Akcije.SKOKOVI.length; k++) {
+			if(polja[k/Controller.BROJ_POLJA_U_KRUGU][k%Controller.BROJ_POLJA_U_KRUGU].getTipPolja() != TipPolja.ZUTO) {
+				continue;
+			}
+			
+			mogucaSelektovanaPoljaIAkcije.add(new PoljeAkcija(selektovanoPolje, Akcije.SKOKOVI[k]));
+		}
+		
+	}
+	
+	private void proveriDaLiSuGDLDAkcijeMoguce(ArrayList<PoljeAkcija> mogucaSelektovanaPoljaIAkcije, Polje selektovanoPolje) {
+		Pozicija pozicija, koraci;
+		int slojZaNovoPolje, indeksUSlojuZaNovoPolje;
+		
+		for(Akcija akcija: Akcije.GDLD) {
+			pozicija = selektovanoPolje.getPozicija();
+			if(pozicija.getY()% 2 == 0 && (akcija == Akcija.GORE || akcija == Akcija.DOLE)) continue; 
+			
+			koraci = Akcije.mapiranjeGDLDAkcijaNaKorake.get(akcija);
+			slojZaNovoPolje = pozicija.getX() + koraci.getX();
+			if( slojZaNovoPolje < 0 || slojZaNovoPolje > (Controller.BROJ_KRUGOVA-1)) continue;
+			
+			indeksUSlojuZaNovoPolje = (pozicija.getY() + koraci.getY()) % Controller.BROJ_POLJA_U_KRUGU;
+			if (indeksUSlojuZaNovoPolje == -1) indeksUSlojuZaNovoPolje = Controller.BROJ_POLJA_U_KRUGU - 1;
+			
+			if(polja[slojZaNovoPolje][indeksUSlojuZaNovoPolje].getTipPolja() != TipPolja.ZUTO) continue;
+			
+			mogucaSelektovanaPoljaIAkcije.add(new PoljeAkcija(selektovanoPolje, akcija));
+		}
+		
 	}
 
 	@Override

@@ -3,11 +3,14 @@ package com.mica.main;
 import java.awt.Point;
 import java.awt.event.MouseEvent;
 import java.io.File;
+import java.util.HashMap;
 
 import javax.swing.JOptionPane;
 
 import com.mica.algorithms.Algoritam;
+import com.mica.algorithms.DeepReinforcementLearning;
 import com.mica.algorithms.MiniMax;
+import com.mica.algorithms.QVrednost;
 import com.mica.algorithms.ReinforcementLearning;
 import com.mica.gui.GlavniProzor;
 
@@ -19,6 +22,7 @@ public class Controller {
 	public static final int BROJ_FIGURA_U_MICI = 3;
 	
 	private boolean koristioReinforcmentLearning;
+	private boolean koristioDeepReinforcmentLearning;
 
 	private boolean potezNapravljen = false;
 	
@@ -27,6 +31,8 @@ public class Controller {
 	private Stanje trenutnoStanje;
 	
 	private ReinforcementLearning reinforcementLearning;
+	
+	private DeepReinforcementLearning deepReinforcementLearning;
 	
 	private MiniMax miniMaxAlgoritam;
 	
@@ -53,10 +59,62 @@ public class Controller {
 	public Controller() {
 		trenutnoStanje = new Stanje();
 		
-		this.reinforcementLearning = new ReinforcementLearning();
+		System.out.println("Malo strpljenja...");
+		
+		/*Thread t = new Thread(new Runnable() {
+			
+			@Override
+			public void run() {*/
+				HashMap<StanjeAkcija, QVrednost> qVrednosti = RadSaPodacima.ucitajStanjaAkcijeIQVrednostiIzFajla();
+				
+				if(qVrednosti == null) {
+					qVrednosti = new HashMap<StanjeAkcija, QVrednost>();
+					JOptionPane.showMessageDialog(glavniProzor, "Problem sa učitavanjem podataka - qvrednosti!", "Greška", JOptionPane.ERROR_MESSAGE);
+				}
+			
+				HashMap<String, Double> tezine = RadSaPodacima.ucitajTezineIzFajla();
+				
+				if(tezine == null) {
+					tezine = new HashMap<String, Double>();
+					tezine.put("tezina_za_broj_tara", 1.0);
+					tezine.put("tezina_za_broj_polutara", 1.0);
+					tezine.put("tezina_za_broj_zivih_tara", 1.0);
+					tezine.put("tezina_za_broj_tara_protivnika", -1.0);
+					tezine.put("tezina_za_broj_polutara_protivnika", -1.0);
+					tezine.put("tezina_za_broj_zivih_tara_protivnika", 1.0);
+					//tezine.put("tezina_za_kraj_igre", 1000.0);
+					JOptionPane.showMessageDialog(glavniProzor, "Problem sa učitavanjem podataka - težine!", "Greška", JOptionPane.ERROR_MESSAGE);
+				}
+				else if(tezine.isEmpty()) {
+					tezine.put("tezina_za_broj_tara", 1.0);
+					tezine.put("tezina_za_broj_polutara", 1.0);
+					tezine.put("tezina_za_broj_zivih_tara", 1.0);
+					tezine.put("tezina_za_broj_tara_protivnika", -1.0);
+					tezine.put("tezina_za_broj_polutara_protivnika", -1.0);
+					tezine.put("tezina_za_broj_zivih_tara_protivnika", -1.0);
+					//tezine.put("tezina_za_kraj_igre", 1000.0);
+					//JOptionPane.showMessageDialog(glavniProzor, "Fajl za težine je bio prazan!", "Obaveštenje", JOptionPane.INFORMATION_MESSAGE);
+				}
+				
+				/*brojMenjanjaQVrednosti = RadSaPodacima.ucitajStanjaAkcijeIBrojIzmenaIzFajla();
+				
+				if(brojMenjanjaQVrednosti == null) {
+					brojMenjanjaQVrednosti = new HashMap<StanjeAkcija, Integer>();
+					JOptionPane.showMessageDialog(null, "Problem sa ucitavanjem podataka - brojMenjanjaQVrednosti!", "Greska", JOptionPane.ERROR_MESSAGE);
+				}*/
+				
+				reinforcementLearning = new ReinforcementLearning(qVrednosti, tezine);
+				
+				//glavniProzor.ukloniDialogZaCekanje();
+		/*	}
+		});
+		t.start();*/
+		
 		this.miniMaxAlgoritam = new MiniMax();
+		this.deepReinforcementLearning = new DeepReinforcementLearning();
 		
 		koristioReinforcmentLearning = false;
+		koristioDeepReinforcmentLearning = false;
 	}
 	
 	public void zapocniNovuIgru() {
@@ -91,10 +149,17 @@ public class Controller {
 		algoritamPlavi = Igrac.getEnumAlgoritam(Igrac.algoritmi[indeksPlavi]);
 		algoritamCrveni = Igrac.getEnumAlgoritam(Igrac.algoritmi[indeksCrveni]);
 		
-		if(algoritamPlavi == Algoritam.RL || algoritamCrveni == Algoritam.RL) {
-			koristioReinforcmentLearning = true;
+		boolean rl = this.algoritamPlaviTrening == Algoritam.RL || this.algoritamCrveniTrening == Algoritam.RL;
+		boolean deepRl = this.algoritamPlaviTrening == Algoritam.DEEP_RL || this.algoritamCrveniTrening == Algoritam.DEEP_RL;
+		
+		if(rl || deepRl) {
+			if(rl) {
+				koristioReinforcmentLearning = true;
+				glavniProzor.prikaziCheckBoxZaPrikazTabelePanel();
+			}
+			if(deepRl) koristioDeepReinforcmentLearning = true;
+			
 			glavniProzor.prikaziPanelZaEpsilon();
-			glavniProzor.prikaziCheckBoxZaPrikazTabelePanel();
 		}
 		
 		trenutnoStanje.getPlaviIgrac().setAlgoritam(algoritamPlavi);
@@ -172,7 +237,7 @@ public class Controller {
 				
 				do{ // cekamo dok ne dobijemo odgovor ili dok korisnik ne odustane od cekanja
 					try {
-						odgovor = klijent.posaljiPutanjuDoSlikeISacekajOdgovor(putanjaDoSlike);
+						odgovor = klijent.posaljiPodatkeISacekajOdgovor(putanjaDoSlike, false);
 					} 
 					catch (Exception e) {}
 					
@@ -190,10 +255,17 @@ public class Controller {
 					resetujSveZaNovuIgru(odgovor);
 					glavniProzor.osveziTablu();
 					
-					if(algoritamPlavi == Algoritam.RL || algoritamCrveni == Algoritam.RL) {
-						koristioReinforcmentLearning = true;
+					boolean rl = algoritamPlaviTrening == Algoritam.RL || algoritamCrveniTrening == Algoritam.RL;
+					boolean deepRl = algoritamPlaviTrening == Algoritam.DEEP_RL || algoritamCrveniTrening == Algoritam.DEEP_RL;
+					
+					if(rl || deepRl) {
+						if(rl) {
+							koristioReinforcmentLearning = true;
+							glavniProzor.prikaziCheckBoxZaPrikazTabelePanel();
+						}
+						if(deepRl) koristioDeepReinforcmentLearning = true;
+						
 						glavniProzor.prikaziPanelZaEpsilon();
-						glavniProzor.prikaziCheckBoxZaPrikazTabelePanel();
 					}
 					
 					trenutnoStanje.getPlaviIgrac().setAlgoritam(algoritamPlavi);
@@ -203,12 +275,12 @@ public class Controller {
 					
 					rezimIgre = RezimIgre.NOVA_IGRA;
 					
-					if(algoritamPlavi != Algoritam.COVEK) {
+					if(algoritamPlavi != Algoritam.COVEK || algoritamCrveni != Algoritam.COVEK) {
 						glavniProzor.prikaziPanelZaSekunde();
 						// plavi uvek prvi pocinje igru, zato ispitujemo njegov algoritam
 						boteOdigrajPotez(algoritamPlavi); 
 					}
-					else if(algoritamCrveni != Algoritam.COVEK) glavniProzor.prikaziPanelZaSekunde();
+					//else if(algoritamCrveni != Algoritam.COVEK) glavniProzor.prikaziPanelZaSekunde();
 					//else glavniProzor.sakrijPanelZaSekunde();
 					
 					glavniProzor.prikaziNaPotezuPanel();
@@ -222,7 +294,7 @@ public class Controller {
 		});
 		t.start();
 		
-		glavniProzor.prikaziDialogZaCekanje();
+		glavniProzor.prikaziDialogZaCekanje("Molimo Vas da sacekate...", false);
 	}
 	
 	public void zapocniTrening() {
@@ -239,7 +311,7 @@ public class Controller {
 				indeksCrveni = indeksi[1];
 				this.brojPartijaTrening = indeksi[2];
 				
-				if(indeksPlavi >= 2 || indeksCrveni >= 2) {
+				if(indeksPlavi >= 3 || indeksCrveni >= 3) {
 					JOptionPane.showMessageDialog(null, "Algoritam koji ste izabrali jos nije implementiran!", "Nije implementiran...", JOptionPane.ERROR_MESSAGE);;	
 				}
 				
@@ -248,7 +320,7 @@ public class Controller {
 				glavniProzor.dialogPocetni(null);
 			}
 		}
-		while(indeksPlavi >= 2 || indeksCrveni >= 2);
+		while(indeksPlavi >= 3 || indeksCrveni >= 3);
 		
 		resetujSveZaNovuIgru(null);
 		glavniProzor.osveziTablu();
@@ -256,10 +328,16 @@ public class Controller {
 		this.algoritamPlaviTrening = Igrac.getEnumAlgoritam(Igrac.algoritmiZaTrening[indeksPlavi]);
 		this.algoritamCrveniTrening = Igrac.getEnumAlgoritam(Igrac.algoritmiZaTrening[indeksCrveni]);
 		
-		if(this.algoritamPlaviTrening == Algoritam.RL || this.algoritamCrveniTrening == Algoritam.RL) {
-			koristioReinforcmentLearning = true;
+		boolean rl = this.algoritamPlaviTrening == Algoritam.RL || this.algoritamCrveniTrening == Algoritam.RL;
+		boolean deepRl = this.algoritamPlaviTrening == Algoritam.DEEP_RL || this.algoritamCrveniTrening == Algoritam.DEEP_RL;
+		if(rl || deepRl) {
+			if(rl) {
+				koristioReinforcmentLearning = true;
+				glavniProzor.prikaziCheckBoxZaPrikazTabelePanel();
+			}
+			if(deepRl) koristioDeepReinforcmentLearning = true;
+			
 			glavniProzor.prikaziPanelZaEpsilon();
-			glavniProzor.prikaziCheckBoxZaPrikazTabelePanel();
 		}
 		
 		trenutnoStanje.getPlaviIgrac().setAlgoritam(this.algoritamPlaviTrening);
@@ -300,15 +378,18 @@ public class Controller {
 		glavniProzor.resetujPomocniPanelZaNovuIgru(trenutnoStanje);
 	}
 
-	public void noviPotez(Stanje stanje, boolean predvidjanjeProtivnikovogPoteza) {
+	public void noviPotez(Stanje stanje, boolean predvidjanjeProtivnikovogPoteza, boolean vecJePodesenBrojNepostavljenih) {
 		TipPolja igracNaPotezu = stanje.getIgracNaPotezu();
 		Igrac crveniIgrac = stanje.getCrveniIgrac();
 		Igrac plaviIgrac = stanje.getPlaviIgrac();
 		
 		if (igracNaPotezu == TipPolja.PLAVO) {
 			if (!stanje.daLiSuSveFigurePostavljene()) {
-				plaviIgrac.umanjiBrojNepostavljenihFigura();
-				if(!predvidjanjeProtivnikovogPoteza) glavniProzor.podesiBrojPlavihNepostavljenihFigura(plaviIgrac.getBrojNepostavljenihFigura());
+				if(!vecJePodesenBrojNepostavljenih) {
+					plaviIgrac.umanjiBrojNepostavljenihFigura();
+					if(!predvidjanjeProtivnikovogPoteza) glavniProzor.podesiBrojPlavihNepostavljenihFigura(plaviIgrac.getBrojNepostavljenihFigura());
+				}
+				
 			}
 			
 			igracNaPotezu = TipPolja.CRVENO;
@@ -317,8 +398,10 @@ public class Controller {
 		}
 		else if(igracNaPotezu == TipPolja.CRVENO) {
 			if (!stanje.daLiSuSveFigurePostavljene()) {
-				crveniIgrac.umanjiBrojNepostavljenihFigura();
-				if(!predvidjanjeProtivnikovogPoteza) glavniProzor.podesiBrojCrvenihNepostavljenihFigura(crveniIgrac.getBrojNepostavljenihFigura());
+				if(!vecJePodesenBrojNepostavljenih) {
+					crveniIgrac.umanjiBrojNepostavljenihFigura();
+					if(!predvidjanjeProtivnikovogPoteza) glavniProzor.podesiBrojCrvenihNepostavljenihFigura(crveniIgrac.getBrojNepostavljenihFigura());
+				}
 			}
 			
 			igracNaPotezu = TipPolja.PLAVO;
@@ -331,12 +414,18 @@ public class Controller {
 	}
 	
 	public void boteOdigrajPotez(Algoritam algoritam) {
-		if (algoritam == Algoritam.RL) {
+		if (algoritam == Algoritam.RL || algoritam == Algoritam.DEEP_RL) {
 			
 			Stanje staroStanje = new Stanje(trenutnoStanje);
 			double stariScore = staroStanje.izracunajScore(staroStanje.getIgracNaPotezu());
 			
-			Potez potez = odigrajPotezIEventualnoPojediProtivnikovuFiguru(trenutnoStanje, false);
+			Potez potez = null;
+			try {
+				potez = odigrajPotezIEventualnoPojediProtivnikovuFiguru(trenutnoStanje, false);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 			// nakon sto je potez napravljen, promenjen je igracNaPotezu
 			
 			//if(prikaziDialogTabelaAkcijaIQVrednosti) glavniProzor.prikaziTabeluAkcijaiQVrednosti(reinforcementLearning.getqVrednostiZaMoguceAkcije());
@@ -346,10 +435,20 @@ public class Controller {
 				else staroStanje.setSelektovanoPolje(potez.getSelektovanoPolje());
 				
 				Stanje potencijalnoNovoStanje = predvidiProtivnikovPotezINapraviNovoStanje(trenutnoStanje);
+				// TODO: da li je potrebno naci potencijalnoNovoStanje kao sledece stanje, ili bi trebalo
+				// koristiti trenutnoStanje kao sledeceStanje
+				
 				
 				//double nagrada = trenutnoStanje.izracunajScore(staroStanje.getIgracNaPotezu()) - stariScore;
 				double nagrada = trenutnoStanje.izracunajScore(staroStanje.getIgracNaPotezu());
-				reinforcementLearning.postaviNovuQVrednost(staroStanje, potez.getAkcija(), potencijalnoNovoStanje, nagrada);
+				
+				if (algoritam == Algoritam.RL) {
+					reinforcementLearning.postaviNovuQVrednost(staroStanje, potez.getAkcija(), potencijalnoNovoStanje, nagrada);
+				}
+				else if(algoritam == Algoritam.DEEP_RL) {
+					deepReinforcementLearning.sacuvajNoviIshodUReplayMemory(staroStanje, potez.getAkcija(), potencijalnoNovoStanje, nagrada);
+					deepReinforcementLearning.odradiTreningNadSlucajnoOdabranimPodskupom();
+				}
 				
 				//RadSaPodacima.sacuvajStanjaAkcijeIQVrednostiUFajl(reinforcementLearning.getqVrednosti());
 				//RadSaPodacima.sacuvajStanjaAkcijeIBrojIzmenaUFajl(reinforcementLearning.getBrojMenjanjaQVrednosti());
@@ -382,6 +481,9 @@ public class Controller {
 			Rezultat rezultat = trenutnoStanje.krajIgre();
 			if(rezultat != null) {
 				rezultat.setBrojPoteza(brojPoteza);
+				if(rezultat.getAlgoritamPobednika() == Algoritam.DEEP_RL || rezultat.getAlgoritamGubitnika() == Algoritam.DEEP_RL) {
+					deepReinforcementLearning.azurirajTezineUNeuronskojMrezi();
+				}
 				RadSaPodacima.upisiKrajnjiRezultatUFajl(rezultat);
 				/*if(trenutnoStanje.getPlaviIgrac().getAlgoritam() == Algoritam.RL || trenutnoStanje.getCrveniIgrac().getAlgoritam() == Algoritam.RL) {
 					RadSaPodacima.sacuvajStanjaAkcijeIQVrednostiUFajl(reinforcementLearning.getqVrednosti());
@@ -556,13 +658,19 @@ public class Controller {
 		return new Potez(polje, selektovanoPolje, akcija);
 	}
 	
-	private Potez odigrajPotezIEventualnoPojediProtivnikovuFiguru(Stanje stanje, boolean predvidjanjeProtivnikovogPoteza) {
-		/*Igrac igrac;
+	private Potez odigrajPotezIEventualnoPojediProtivnikovuFiguru(Stanje stanje, boolean predvidjanjeProtivnikovogPoteza) throws Exception {
+		Igrac igrac;
 		if(stanje.getIgracNaPotezu() == TipPolja.PLAVO) igrac = stanje.getPlaviIgrac();
 		else igrac = stanje.getCrveniIgrac();
 			
-		igrac.setSelektovanoPolje(null);*/
-		PoljeAkcija novoSelektovanoPoljeIAkcija = reinforcementLearning.getNovoSelektovanoPoljeIAkcija(stanje);
+		PoljeAkcija novoSelektovanoPoljeIAkcija;
+		if(igrac.getAlgoritam() == Algoritam.RL) {
+			novoSelektovanoPoljeIAkcija = reinforcementLearning.getNovoSelektovanoPoljeIAkcija(stanje);
+		}
+		else if(igrac.getAlgoritam() == Algoritam.DEEP_RL) {
+			novoSelektovanoPoljeIAkcija = deepReinforcementLearning.getNovoSelektovanoPoljeIAkcija(stanje);
+		}
+		else throw new Exception("Ovde algoritam moze biti ili Reinforcement Learning ili Deep Reinforcement Learning");
 		
 		if(prikaziDialogTabelaAkcijaIQVrednosti && !predvidjanjeProtivnikovogPoteza) glavniProzor.prikaziTabeluAkcijaiQVrednosti(reinforcementLearning.getqVrednostiZaMoguceAkcije(), novoSelektovanoPoljeIAkcija);
 		
@@ -583,30 +691,6 @@ public class Controller {
 					try { Thread.sleep(brojSekundiZaSpavanje*1000); } catch (InterruptedException e) {} // sacekaj onoliko sekundi koliko je zadato
 				}
 			}
-			
-			/*Thread t = new Thread(new Runnable() {
-				
-				@Override
-				public void run() {
-					SwingUtilities.invokeLater(new Runnable() {
-			            public void run() {
-			    			if(brojSekundiZaSpavanje > 0) {
-			    				try { Thread.sleep(brojSekundiZaSpavanje * 1000); } catch (InterruptedException e) {} // sacekaj onoliko sekundi koliko je zadato
-			    			}
-			    			
-			    			napraviPotez(stanje, potez.getPolje(), potez.getSelektovanoPolje(), azurirajPomocniPanel);
-			    			
-			    			if(stanje.isPojedi()) {
-			    				pojediFiguru(stanje, azurirajPomocniPanel);
-			    			}
-			    			
-			    			//glavniProzor.osveziTablu();
-			            }
-			        });
-					
-				}
-			});
-			t.start();*/
 				
 		}
 		
@@ -624,7 +708,12 @@ public class Controller {
 	private Stanje predvidiProtivnikovPotezINapraviNovoStanje(Stanje stanje) {
 		Stanje novoStanje = new Stanje(stanje);
 		
-		odigrajPotezIEventualnoPojediProtivnikovuFiguru(novoStanje, true);
+		try {
+			odigrajPotezIEventualnoPojediProtivnikovuFiguru(novoStanje, true);
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
 		return novoStanje;
 	}
@@ -721,6 +810,22 @@ public class Controller {
 		this.reinforcementLearning = reinforcementLearning;
 	}
 	
+	public DeepReinforcementLearning getDeepReinforcementLearning() {
+		return deepReinforcementLearning;
+	}
+
+	public void setDeepReinforcementLearning(DeepReinforcementLearning deepReinforcementLearning) {
+		this.deepReinforcementLearning = deepReinforcementLearning;
+	}
+
+	public boolean isKoristioDeepReinforcmentLearning() {
+		return koristioDeepReinforcmentLearning;
+	}
+
+	public void setKoristioDeepReinforcmentLearning(boolean koristioDeepReinforcmentLearning) {
+		this.koristioDeepReinforcmentLearning = koristioDeepReinforcmentLearning;
+	}
+	
 	public boolean isPotezNapravljen() {
 		return potezNapravljen;
 	}
@@ -775,7 +880,7 @@ public class Controller {
 	
 		if(!predvidjanjeProtivnikovogPoteza) glavniProzor.sakrijPanelZaPojediLabel();
 		
-		noviPotez(stanje, predvidjanjeProtivnikovogPoteza);
+		noviPotez(stanje, predvidjanjeProtivnikovogPoteza, true);
 	}
 
 	public void napraviPotez(Stanje stanje, Polje polje, Polje selektovanoPolje, boolean predvidjanjeProtivnikovogPoteza) {
@@ -785,10 +890,11 @@ public class Controller {
 		stanje.podesiPoljaUTaramaIVanNjih();
 		
 		if(!daLijeUTariStaro && polje.isDaLiJeUTari())  {
+			umanjiBrojNepostavljenihFiguraPreJedenja(stanje, predvidjanjeProtivnikovogPoteza);
 			spremiJedenje(stanje, predvidjanjeProtivnikovogPoteza); // kasnije prilikom jedenja bice setovano - proveriKrajIgre = true;
 		}
 		else {
-			noviPotez(stanje, predvidjanjeProtivnikovogPoteza);
+			noviPotez(stanje, predvidjanjeProtivnikovogPoteza, false);
 			
 			if(selektovanoPolje == null) {
 				if (stanje.daLiSuSveFigurePostavljene()) proveriKrajIgre = true;
@@ -799,6 +905,27 @@ public class Controller {
 			
 		}
 		
+	}
+	
+	public void umanjiBrojNepostavljenihFiguraPreJedenja(Stanje stanje, boolean predvidjanjeProtivnikovogPoteza) {
+		TipPolja igracNaPotezu = stanje.getIgracNaPotezu();
+		Igrac crveniIgrac = stanje.getCrveniIgrac();
+		Igrac plaviIgrac = stanje.getPlaviIgrac();
+		
+		if (igracNaPotezu == TipPolja.PLAVO) {
+			if (!stanje.daLiSuSveFigurePostavljene()) {
+				plaviIgrac.umanjiBrojNepostavljenihFigura();
+				if(!predvidjanjeProtivnikovogPoteza) glavniProzor.podesiBrojPlavihNepostavljenihFigura(plaviIgrac.getBrojNepostavljenihFigura());
+			}
+			
+		}
+		else if(igracNaPotezu == TipPolja.CRVENO) {
+			if (!stanje.daLiSuSveFigurePostavljene()) {
+				crveniIgrac.umanjiBrojNepostavljenihFigura();
+				if(!predvidjanjeProtivnikovogPoteza) glavniProzor.podesiBrojCrvenihNepostavljenihFigura(crveniIgrac.getBrojNepostavljenihFigura());
+			}
+			
+		}
 	}
 	
 	public static void izvrsiPostavljanjeIliPomeranjeFigura(Stanje stanje, Polje polje, Polje selektovanoPolje) {
@@ -879,7 +1006,7 @@ public class Controller {
 			
 			if (uslov) {
 				polje.setTipPolja(TipPolja.ZUTO);
-				zavrsiJedenje(stanje, azurirajPomocniPanel);
+				zavrsiJedenje(stanje, !azurirajPomocniPanel);  // pre je stojalo azurirajPomocniPanel bez uzvicnika, vrv je bio bag
 				if(dlsspput) stanje.podesiPoljaUTaramaIVanNjih();
 				proveriKrajIgre = true;
 			}
@@ -1022,6 +1149,7 @@ public class Controller {
 
 	public void podesiEpsilon(double epsilon, boolean azurirajVrednostUPomocnomPanelu) {
 		reinforcementLearning.setEpsilon(epsilon);
+		deepReinforcementLearning.setEpsilon(epsilon);
 		if(azurirajVrednostUPomocnomPanelu) glavniProzor.setEpsilonUPomocnomPanelu(epsilon);
 		
 	}
@@ -1053,6 +1181,44 @@ public class Controller {
 		else System.out.println("klijent == null");*/
 		//String poruka = "Trenutno nije moguce obraditi sliku!";
 		glavniProzor.dialogPocetni(null);
+	}
+	
+	public void izlaz() {
+		if(koristioReinforcmentLearning) {
+			boolean predjenaGranica = reinforcementLearning.daLiJePredjenaGranicaZaPrelazNaAproksimaciju();
+				
+			int res = glavniProzor.dialogZaCuvanjeQVrednostiITezina(predjenaGranica);
+			
+			if (res == 2 || res == -1) {
+				System.out.println("Nema cuvanja");
+				return;
+			}
+			else {
+				if(res == 0) {
+					Thread thread = new Thread(new Runnable() {
+						
+						@Override
+						public void run() {
+							if(predjenaGranica) {
+								RadSaPodacima.sacuvajTezineUFajl(reinforcementLearning.getTezine());
+							}
+							else {
+								RadSaPodacima.sacuvajStanjaAkcijeIQVrednostiUFajl(reinforcementLearning.getqVrednosti());
+							}
+							
+							System.exit(0);
+						}
+					});
+					thread.start();
+					
+					glavniProzor.prikaziDialogZaCekanje("Malo strpljenja dok se podaci ne sacuvaju...", true);
+				}
+				else System.exit(0);
+				
+				
+			}
+		}
+		else System.exit(0);
 	}
 	
 }
