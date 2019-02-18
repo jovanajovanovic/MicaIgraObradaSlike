@@ -188,7 +188,7 @@ public class PomocniPanel extends JPanel {
 		
 		checkBoxZaPrikazTabelePanel = new JPanel();
 		checkBoxZaPrikazTabelePanel.setBorder(BorderFactory.createLineBorder(Tabla.BOJA_POZADINE, DEBLJINA_BORDERA_PANELA));
-		checkBoxZaPrikazTabele = new JCheckBox("Prikazuj dialog sa tabelom za akcije i Q-vrednosti", controller.isPrikaziDialogTabelaAkcijaIQVrednosti());
+		checkBoxZaPrikazTabele = new JCheckBox("Prikazuj dialog sa tabelom za akcije i Q-vrednosti (samo za RL)", controller.isPrikaziDialogTabelaAkcijaIQVrednosti());
 		checkBoxZaPrikazTabele.addChangeListener(new ChangeListener() {
 			
 			@Override
@@ -280,7 +280,7 @@ public class PomocniPanel extends JPanel {
 		gridBagLayout.setConstraints(spinnerEpsilon, constraints);
 		panelZaEpsilon.add(spinnerEpsilon);
 		
-		JLabel labelOstatakTeksta = new JLabel(" (samo za reinforcement learning)");
+		JLabel labelOstatakTeksta = new JLabel(" (samo za RL i Deep RL)");
 		//constraints.weightx = 0.5;
 		if(prikaziUDvaReda) {
 			JLabel razmakLabel = new JLabel("  ");

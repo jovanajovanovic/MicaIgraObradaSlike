@@ -13,8 +13,8 @@ public class Igrac {
 	//private ArrayList<Integer> indeksiPolja;
 	//private int indeksSelektovanogPolja;
 	
-	public static final String[] algoritmi = { "ČOVEK", "RL", "MINI_MAX" };
-	public static final String[] algoritmiZaTrening = { "RL", "MINI_MAX" };
+	public static final String[] algoritmi = { "ČOVEK", "RL", "MINI_MAX", "DEEP_RL" };
+	public static final String[] algoritmiZaTrening = { "RL", "MINI_MAX", "DEEP_RL" };
 	
 	public Igrac(String name, TipPolja tipIgraca, int brojNepostavljenihFigura, int brojPreostalihFigura) {	
 		this.name = name;
@@ -68,7 +68,11 @@ public class Igrac {
 			Igrac igrac = new Igrac(tokeniIgrac[0].trim(), TipPolja.valueOf(tokeniIgrac[1].trim()), Integer.parseInt(tokeniIgrac[2].trim()), Integer.parseInt(tokeniIgrac[3].trim()), indeksiPolja, Integer.parseInt(tokeniIgrac[5].trim()));
 			*/
 			
-			Igrac igrac = new Igrac(tokeniIgrac[0].trim(), TipPolja.values()[Integer.parseInt(tokeniIgrac[1].trim())], Integer.parseInt(tokeniIgrac[2].trim()), Integer.parseInt(tokeniIgrac[3].trim()));
+			//Igrac igrac = new Igrac(tokeniIgrac[0].trim(), TipPolja.values()[Integer.parseInt(tokeniIgrac[1].trim())], Integer.parseInt(tokeniIgrac[2].trim()), Integer.parseInt(tokeniIgrac[3].trim()));
+			TipPolja tipPolja = TipPolja.values()[Integer.parseInt(tokeniIgrac[0].trim())];
+			String name = tipPolja.name().toLowerCase();
+			name = name.charAt(0) + name.substring(1, name.length()-1).toLowerCase() + "i";
+			Igrac igrac = new Igrac(name, tipPolja, Integer.parseInt(tokeniIgrac[1].trim()), Integer.parseInt(tokeniIgrac[2].trim()));
 			return igrac;
 		}
 		catch(Exception e) {
@@ -149,7 +153,8 @@ public class Igrac {
 		}*/
 		
 		StringBuilder sb = new StringBuilder("");
-		sb.append(name); sb.append(";"); sb.append(tipIgraca.ordinal()); 
+		//sb.append(name); sb.append(";");
+		sb.append(tipIgraca.ordinal()); 
 		sb.append(";"); 
 		sb.append(brojNepostavljenihFigura); 
 		sb.append(";"); 

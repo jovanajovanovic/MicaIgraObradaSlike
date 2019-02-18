@@ -4,18 +4,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Random;
 
-import javax.swing.JOptionPane;
-
 import com.mica.main.Akcija;
-import com.mica.main.Akcije;
 import com.mica.main.Controller;
-import com.mica.main.Igrac;
-import com.mica.main.Polje;
 import com.mica.main.PoljeAkcija;
 import com.mica.main.Potez;
-import com.mica.main.Pozicija;
 import com.mica.main.QVrednostSelektovanoPoljeAkcija;
-import com.mica.main.RadSaPodacima;
 import com.mica.main.Stanje;
 import com.mica.main.StanjeAkcija;
 import com.mica.main.TipPolja;
@@ -34,46 +27,9 @@ public class ReinforcementLearning {
 	
 	private final int GRANICA_ZA_PRELAZ_NA_APROKSIMACIJU = 500000;
 
-	public ReinforcementLearning() {
-		System.out.println("Malo strpljenja...");
-		
-		qVrednosti = RadSaPodacima.ucitajStanjaAkcijeIQVrednostiIzFajla();
-		
-		if(qVrednosti == null) {
-			qVrednosti = new HashMap<StanjeAkcija, QVrednost>();
-			JOptionPane.showMessageDialog(null, "Problem sa učitavanjem podataka - qvrednosti!", "Greška", JOptionPane.ERROR_MESSAGE);
-		}
-	
-		tezine = RadSaPodacima.ucitajTezineIzFajla();
-		
-		if(tezine == null) {
-			tezine = new HashMap<String, Double>();
-			tezine.put("tezina_za_broj_tara", 1.0);
-			tezine.put("tezina_za_broj_polutara", 1.0);
-			tezine.put("tezina_za_broj_zivih_tara", 1.0);
-			tezine.put("tezina_za_broj_tara_protivnika", -1.0);
-			tezine.put("tezina_za_broj_polutara_protivnika", -1.0);
-			tezine.put("tezina_za_broj_zivih_tara_protivnika", 1.0);
-			//tezine.put("tezina_za_kraj_igre", 1000.0);
-			JOptionPane.showMessageDialog(null, "Problem sa učitavanjem podataka - težine!", "Greška", JOptionPane.ERROR_MESSAGE);
-		}
-		else if(tezine.isEmpty()) {
-			tezine.put("tezina_za_broj_tara", 1.0);
-			tezine.put("tezina_za_broj_polutara", 1.0);
-			tezine.put("tezina_za_broj_zivih_tara", 1.0);
-			tezine.put("tezina_za_broj_tara_protivnika", -1.0);
-			tezine.put("tezina_za_broj_polutara_protivnika", -1.0);
-			tezine.put("tezina_za_broj_zivih_tara_protivnika", -1.0);
-			//tezine.put("tezina_za_kraj_igre", 1000.0);
-			JOptionPane.showMessageDialog(null, "Fajl za težine je bio prazan!", "Obaveštenje", JOptionPane.INFORMATION_MESSAGE);
-		}
-		
-		/*brojMenjanjaQVrednosti = RadSaPodacima.ucitajStanjaAkcijeIBrojIzmenaIzFajla();
-		
-		if(brojMenjanjaQVrednosti == null) {
-			brojMenjanjaQVrednosti = new HashMap<StanjeAkcija, Integer>();
-			JOptionPane.showMessageDialog(null, "Problem sa ucitavanjem podataka - brojMenjanjaQVrednosti!", "Greska", JOptionPane.ERROR_MESSAGE);
-		}*/
+	public ReinforcementLearning(HashMap<StanjeAkcija, QVrednost> qVrednosti, HashMap<String, Double> tezine) {
+		this.qVrednosti = qVrednosti;
+		this.tezine = tezine;
 		
 		System.out.println("Spreman! " + qVrednosti.size());
 		
@@ -97,14 +53,14 @@ public class ReinforcementLearning {
 	}
 	*/
 	
-	public boolean baciNovcic(double epsilon) {	
-		double randomVrednost = this.random.nextDouble();
+	public static boolean baciNovcic(double epsilon) {	
+		double randomVrednost = new Random().nextDouble();
 		System.out.println("Random vrednost: " + randomVrednost);
 		
 	    return randomVrednost < epsilon;
 	}
 	
-	public ArrayList<PoljeAkcija> getMogucaSelektovanaPoljaIAkcijeZaDatoStanje(Stanje stanje) {
+	/*public ArrayList<PoljeAkcija> getMogucaSelektovanaPoljaIAkcijeZaDatoStanje(Stanje stanje) {
 		ArrayList<PoljeAkcija> mogucaSelektovanaPoljaIAkcije = new ArrayList<PoljeAkcija>();
 		
 		Polje[][] polja = stanje.getPolja();
@@ -159,9 +115,20 @@ public class ReinforcementLearning {
 		}
 		
 		return mogucaSelektovanaPoljaIAkcije;
-	}
+	}*/
 	
-	private void proveriDaLiSuGDLDAkcijeMoguce(Polje[][] polja, ArrayList<PoljeAkcija> mogucaSelektovanaPoljaIAkcije, Polje selektovanoPolje) {
+	/*private void proveriDaLiSuSkokoviMoguci(ArrayList<PoljeAkcija> mogucaSelektovanaPoljaIAkcije, Polje selektovanoPolje) {
+		for (int k = 0; k < Akcije.SKOKOVI.length; k++) {
+			if(polja[k/Controller.BROJ_POLJA_U_KRUGU][k%Controller.BROJ_POLJA_U_KRUGU].getTipPolja() != TipPolja.ZUTO) {
+				continue;
+			}
+			
+			mogucaSelektovanaPoljaIAkcije.add(new PoljeAkcija(selektovanoPolje, Akcije.SKOKOVI[k]));
+		}
+		
+	}*/
+	
+	/*private void proveriDaLiSuGDLDAkcijeMoguce(Polje[][] polja, ArrayList<PoljeAkcija> mogucaSelektovanaPoljaIAkcije, Polje selektovanoPolje) {
 		Pozicija pozicija, koraci;
 		int slojZaNovoPolje, indeksUSlojuZaNovoPolje;
 		
@@ -181,40 +148,31 @@ public class ReinforcementLearning {
 			mogucaSelektovanaPoljaIAkcije.add(new PoljeAkcija(selektovanoPolje, akcija));
 		}
 		
-	}
+	}*/
 
-
-	private void proveriDaLiSuSkokoviMoguci(Polje[][] polja, ArrayList<PoljeAkcija> mogucaSelektovanaPoljaIAkcije, Polje selektovanoPolje) {
-		for (int k = 0; k < Akcije.SKOKOVI.length; k++) {
-			if(polja[k/Controller.BROJ_POLJA_U_KRUGU][k%Controller.BROJ_POLJA_U_KRUGU].getTipPolja() != TipPolja.ZUTO) {
-				continue;
-			}
-			
-			mogucaSelektovanaPoljaIAkcije.add(new PoljeAkcija(selektovanoPolje, Akcije.SKOKOVI[k]));
-		}
-		
-	}
-	
 	public PoljeAkcija getNovoSelektovanoPoljeIAkcija(Stanje stanje) {
-		ArrayList<PoljeAkcija> mogucaSelektovanaPoljaIAkcije = getMogucaSelektovanaPoljaIAkcijeZaDatoStanje(stanje);
+		ArrayList<PoljeAkcija> mogucaSelektovanaPoljaIAkcije = stanje.getMogucaSelektovanaPoljaIAkcijeZaDatoStanje();
 		if(mogucaSelektovanaPoljaIAkcije.isEmpty()) {
 			return null;
 		}
 		
 		
         if (baciNovcic(this.epsilon)) {
+        	// TODO: bolje bi bilo prvo proveriti moze li se doci u stanje koje jos nikad nismo posetili,
+        	// ako ima takvih, izabracemo random stanje od tih neposecenih, a ako nema neposecenih, tj. sva su posecena,
+        	// onda izabrati random od svih mogucih stanja 
         	int randomIndeks = this.random.nextInt(mogucaSelektovanaPoljaIAkcije.size());
         	qVrednostiZaMoguceAkcije = null;
-        	
+
         	return mogucaSelektovanaPoljaIAkcije.get(randomIndeks);
         }
         
         postaviQVrednostiZaMoguceAkcije(stanje, mogucaSelektovanaPoljaIAkcije);
         
         PoljeAkcija pa = getAkcijaPoPolotici(stanje, mogucaSelektovanaPoljaIAkcije);
-        if(pa == null) {
+        /*if(pa == null) {
         	return null;
-        }
+        }*/
         return pa;
 	}
 	
@@ -268,7 +226,7 @@ public class ReinforcementLearning {
 		}*/
 		
 		// gledamo potez u napred
-		ArrayList<PoljeAkcija> mogucaSelektovanaPoljaIAkcije = getMogucaSelektovanaPoljaIAkcijeZaDatoStanje(sledeceStanje);
+		ArrayList<PoljeAkcija> mogucaSelektovanaPoljaIAkcije = sledeceStanje.getMogucaSelektovanaPoljaIAkcijeZaDatoStanje();
 		QVrednostSelektovanoPoljeAkcija maksimumQVrednostSelektovanoPoljeAkcija = izracunajNajboljuAkcijuPoQvrednostima(sledeceStanje, mogucaSelektovanaPoljaIAkcije);
 		double uzorak = nagrada + Math.pow(this.zanemarivanje, Controller.brojPoteza)*maksimumQVrednostSelektovanoPoljeAkcija.getqVrednost();
 		
@@ -378,14 +336,14 @@ public class ReinforcementLearning {
         	kopijaStanja.setSelektovanoPolje(selektovanoPoljeAkcija.getPolje());
     		trenutnoStanjeAKcija.setAkcija(selektovanoPoljeAkcija.getAkcija());
     		
-        	//if(qVrednosti.size() > GRANICA_ZA_PRELAZ_NA_APROKSIMACIJU) {
-        	//	vrednost = getAproksimiranaQVrednost(trenutnoStanjeAKcija);
-        	//}
-        	//else {
-        	qVrednost = getQVrednost(trenutnoStanjeAKcija);
-            if(qVrednost != null) vrednost = qVrednost.getVrednost();
-            else vrednost = 0.0;
-        	//}
+        	if(qVrednosti.size() > GRANICA_ZA_PRELAZ_NA_APROKSIMACIJU) {
+        		vrednost = getAproksimiranaQVrednost(trenutnoStanjeAKcija);
+        	}
+        	else {
+	        	qVrednost = getQVrednost(trenutnoStanjeAKcija);
+	            if(qVrednost != null) vrednost = qVrednost.getVrednost();
+	            else vrednost = 0.0;
+        	}
         	
         	qVrednostiZaMoguceAkcije.put(selektovanoPoljeAkcija, vrednost);
         	System.out.println("*****************VREDNOST: " + vrednost);
