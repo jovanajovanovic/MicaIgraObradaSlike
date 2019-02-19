@@ -8,9 +8,10 @@ def start_processing(path):
     #orginalna slika
     image = cv2.cvtColor(cv2.imread(path),cv2.COLOR_BGR2RGB)
     #pozvacemo funkciju za sredjivanje slike
-    image_processing(image)
+    result = image_processing(image)
     # povratna vrednost je string
-    return "0,1,1,2,0,2,1,0;2,1,2,0,0,0,1,2;0,0,0,1,0,0,0,0|3,4".encode() #samo za probu
+    result += "|0,0"
+    return result #samo za probu
 
 def image_processing(image):
     # priprema slike za isdvajanje figura
@@ -18,25 +19,25 @@ def image_processing(image):
     img_gray = cv2.cvtColor(original_img, cv2.COLOR_RGB2GRAY)
 
 #ovde cemo gledati sta nam vrati funkcija processing, pa cemo u zavisnosti od toga menjati value
-    processing(img_gray, 5, original_img)
-
+    result = processing(img_gray, 7, original_img)
+    return result
 
 def processing(img_gray, value, original_img):
-    img_gray = cv2.medianBlur(img_gray, value)
+    image_gray = cv2.medianBlur(img_gray, 7)  # mozda bi trebalo stvaiti 7, jer smo za neke slike imali problema,
+    # jer smo neke sumove na tabli detektovali kao krugove
+    image_bin = cv2.adaptiveThreshold(image_gray, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 35, 15)
 
-    image_bin = cv2.adaptiveThreshold(img_gray, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, 35, 15)
+    plt.imshow(image_bin, 'gray')
 
-#plotujemo binarnu sliku
-    plt.imshow(image_bin)
-
-    #trazimo konture
     _, contours, hierarchy = cv2.findContours(image_bin, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+
     for i in range(2):  # radimo 2 iteracije jer obicno nakon jedne ne dobijemo da je kontura table najveca
         index_of_biggest, table_contour = find_biggest_rectangle(contours)
         del contours[index_of_biggest]
+
     if table_contour is not None:
-        circles = cv2.HoughCircles(img_gray, cv2.HOUGH_GRADIENT, 1, 10, param1=50, param2=30, minRadius=60,
-                                   maxRadius=120)
+        circles = cv2.HoughCircles(image_gray, cv2.HOUGH_GRADIENT, 1, 10, param1=50, param2=30, minRadius=60,
+                                   maxRadius=150)
         # zaokruzujemo sve na celobrojne vrednosti
         circles = np.uint32(np.around(circles))
         circles = circles[0, :]
@@ -61,27 +62,78 @@ def processing(img_gray, value, original_img):
                 print("len(matrix[1]) = " + str(len(matrix[1])) + "  # matrix[1] - srednji pravougaonik")
                 print("len(matrix[2]) = " + str(len(matrix[2])) + "  # matrix[2] - unutrasnji pravougaonik")
 
-                list = []
+                # odredimo boju na igraca cija je figura na osnovu boje
+                for i in range(0, 3):  # matrica, odredjeni krug
+                    for j in range(len(matrix[i])):  # setnja kroz listu krugova
+                        print('indeks kruga: i= ' + str(i) + " j = " + str(j))
+                        print('pozicija kruga: ' + str(matrix[i][j]['circle']))
+                        print('rgb: ' + str(matrix[i][j]['rgb']))
+                        if (matrix[i][j]['rgb'][0] > 90):
+                            # red, prvi igrac 1
+                            print('crveni igrac: ' + str(matrix[i][j]['rgb'][0]))
+                            matrix[i][j]['player'] = 1
+                        elif (matrix[i][j]['rgb'][2] > 65):
+                            # plavi - slobodno polje
+                            print('slobodno polje: ' + str(matrix[i][j]['rgb'][2]))
+                            matrix[i][j]['player'] = 0
+                        else:
+                            # crno, igrac 2
+                            print('crni igrac: ' + str(matrix[i][j]['rgb'][0]))
+                            matrix[i][j]['player'] = 2
+
+                # ispritamo da li smo dobro dodelili figure
+                for i in range(0, 3):
+                    for c in matrix[i]:
+                        print("igrac u listi i=" + str(i) + " je: " + str(c['player']))
+
+                result = ""
+                for i in range(len(matrix[0])):
+                    if (i == (len(matrix[0]) - 1)):
+                        result += str(matrix[0][i]['player'])
+                    else:
+                        result += str(matrix[0][i]['player'])
+                        result += ","
+                result += ";"
+                for i in range(len(matrix[1])):
+                    if (i == (len(matrix[1]) - 1)):
+                        result += str(matrix[1][i]['player'])
+                    else:
+                        result += str(matrix[1][i]['player'])
+                        result += ","
+                result += ";"
                 for i in range(len(matrix[2])):
-                    print('indeks kruga u listi: ' + str(i))
-                    print('pozicija kruga: ' + str(matrix[2][i]['circle']))
-                    print('rgb najmnanji krug : ' + str(matrix[2][i]['rgb']))
-                    # oderdimo boju redom
-                    if (tuple([80, 150, 130]) > matrix[2][i]["rgb"] > tuple([50, 120, 120])):
-                        print("is blue - prazno polje" + " rgb " + str(matrix[2][i]['rgb']))
+                    if (i == (len(matrix[2]) - 1)):
+                        result += str(matrix[2][i]['player'])
+                    else:
+                        result += str(matrix[2][i]['player'])
+                        result += ","
 
-            elif len(circles_without_duplicates) == 23:
-                return -1
+                print('result: ' + result)
+
+                #  cv2.circle(original_img,(matrix[0][3]["circle"][0],matrix[0][3]["circle"][1]),matrix[0][3]["circle"][2],(0,255,0),3)
+                # for c in matrix[0]:
+                # draw the outer circle
+                # cv2.circle(original_img,(c["circle"][0],c["circle"][1]),c["circle"][2],(255,0,0),3)
+
+                # for c in matrix[1]:
+                # draw the outer circle
+                # cv2.circle(original_img,(c["circle"][0],c["circle"][1]),c["circle"][2],(0,255,0),3)
+
+                # for c in matrix[2]:
+                # draw the outer circle
+                # cv2.circle(original_img,(c["circle"][0],c["circle"][1]),c["circle"][2],(0,0,255),3)
+
+                cv2.drawContours(original_img, [table_contour], -1, (255, 0, 0), 3)
+                plt.figure()
+                plt.imshow(original_img)
+                return result
             else:
-                processing(img_gray, 7, original_img)
-        #       print("Mora biti detektovano tacno 24 circles_without_duplicates, a sada je detektovano "+str(len(circles_without_duplicates)))
-
+                print("Mora biti detektovano tacno 24 circles_without_duplicates, a sada je detektovano " + str(
+                    len(circles_without_duplicates)))
         else:
-          #  print("Trenutno nema nijedan circles_without_duplicates!")
-            return -2
+            print("Trenutno nema nijedan circles_without_duplicates!")
     else:
-       # print("Error!")
-        return 0
+        print("Error!")
 
 
 def find_biggest_rectangle(contours):
@@ -252,12 +304,14 @@ def get_circles_without_duplicates(circles, table_contour, image):
             x = circle[0]
             y = circle[1]
             if cv2.pointPolygonTest(table_contour, (x, y), False) == 1:  # centar kruga se nalazi na  tabli
-                circle_img = np.zeros((hsv.shape[0], hsv.shape[1]),
-                                      np.uint8)  # Creamos mascara (matriz de ceros) del tamano de la imagen original
-                cv2.circle(circle_img, (x, y), circle[2], (255, 255, 255), -1)  # Pintamos los circulos en la mascara
-                rgb = cv2.mean(hsv, mask=circle_img)[::-1][1:]
+             #   circle_img = np.zeros((hsv.shape[0], hsv.shape[1]),
+                                    #  np.uint8)  # Creamos mascara (matriz de ceros) del tamano de la imagen original
+             #   cv2.circle(circle_img, (x, y), circle[2], (255, 255, 255), -1)  # Pintamos los circulos en la mascara
+             #   rgb = cv2.mean(hsv, mask=circle_img)[::-1][1:]
                 # rgb = (int(original_img[y][x][0]),int(original_img[y][x][1]),int(original_img[y][x][2]))
-                circles_without_duplicates.append({"circle": circle, "rgb": rgb})
+                 rgb = image[y][x]
+                 p = -1
+                 circles_without_duplicates.append({"circle": circle, "rgb": rgb, "player": p})
     return circles_without_duplicates
 
 def haveIntersect(circle, circles_without_duplicates):
