@@ -14,7 +14,6 @@ def start_processing(path):
         return "Error!"
     # povratna vrednost je string
     else :
-        result += "|0,0"
         return result #samo za probu
 
 def image_processing(image):
@@ -40,7 +39,7 @@ def processing(img_gray, value, original_img):
         del contours[index_of_biggest]
 
     if table_contour is not None:
-        circles = cv2.HoughCircles(image_gray, cv2.HOUGH_GRADIENT, 1, 10, param1=50, param2=30, minRadius=55,
+        circles = cv2.HoughCircles(image_gray, cv2.HOUGH_GRADIENT, 1, 10, param1=50, param2=30, minRadius=40,
                                    maxRadius=120)
         # zaokruzujemo sve na celobrojne vrednosti
         circles = np.uint32(np.around(circles))
@@ -66,6 +65,8 @@ def processing(img_gray, value, original_img):
                 print("len(matrix[1]) = " + str(len(matrix[1])) + "  # matrix[1] - srednji pravougaonik")
                 print("len(matrix[2]) = " + str(len(matrix[2])) + "  # matrix[2] - unutrasnji pravougaonik")
 
+                red_figures = 0
+                black_figures = 0
                 # odredimo boju na igraca cija je figura na osnovu boje
                 for i in range(0, 3):  # matrica, odredjeni krug
                     for j in range(len(matrix[i])):  # setnja kroz listu krugova
@@ -79,6 +80,7 @@ def processing(img_gray, value, original_img):
                             # crno, igrac 2
                             print('crni igrac: ' + str(matrix[i][j]['rgb']))
                             matrix[i][j]['player'] = 2
+                            black_figures += 1
                         elif (matrix[i][j]['rgb'][2] > matrix[i][j]['rgb'][0]):
                             # plavi - slobodno polje
                             print('slobodno polje: ' + str(matrix[i][j]['rgb'][2]))
@@ -87,6 +89,7 @@ def processing(img_gray, value, original_img):
                             # crveno
                             print('crveni igrac: ' + str(matrix[i][j]['rgb'][0]))
                             matrix[i][j]['player'] = 1
+                            red_figures += 1
 
                 # ispritamo da li smo dobro dodelili figure
                 for i in range(0, 3):
@@ -114,6 +117,12 @@ def processing(img_gray, value, original_img):
                     else:
                         result += str(matrix[2][i]['player'])
                         result += ","
+
+                red_f = 9 - red_figures
+                black_f = 9 - black_figures
+                result += "|" + str(red_f) + "," + str(black_f)
+
+                print('result: ' + result)
 
                 print('result: ' + result)
 
