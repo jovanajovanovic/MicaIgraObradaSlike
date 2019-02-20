@@ -132,7 +132,7 @@ public class Controller {
 				indeksPlavi = indeksi[0];
 				indeksCrveni = indeksi[1];
 				
-				if(indeksPlavi >= 3 || indeksCrveni >= 3) {
+				if(indeksPlavi >= 4 || indeksCrveni >= 4) {
 					JOptionPane.showMessageDialog(null, "Algoritam koji ste izabrali jos nije implementiran!", "Nije implementiran...", JOptionPane.ERROR_MESSAGE);;	
 				}
 				
@@ -141,7 +141,7 @@ public class Controller {
 				glavniProzor.dialogPocetni(null);
 			}
 		}
-		while(indeksPlavi >= 3 || indeksCrveni >= 3);
+		while(indeksPlavi >= 4 || indeksCrveni >= 4);
 		
 		resetujSveZaNovuIgru(null);
 		glavniProzor.osveziTablu();
@@ -200,7 +200,7 @@ public class Controller {
 					indeksPlavi = Integer.parseInt(res[0]);
 					indeksCrveni = Integer.parseInt(res[1]);
 					
-					if(indeksPlavi >= 3 || indeksCrveni >= 3) {
+					if(indeksPlavi >= 4 || indeksCrveni >= 4) {
 						JOptionPane.showMessageDialog(null, "Algoritam koji ste izabrali jos nije implementiran!","Nijeimplementiran...", JOptionPane.ERROR_MESSAGE);
 					}
 					else {
@@ -221,7 +221,7 @@ public class Controller {
 				glavniProzor.dialogPocetni(null);
 			}
 		}
-		while(indeksPlavi >= 3 || indeksCrveni >= 3 || indeksPlavi == -2 || indeksCrveni == -2 || !postojiFajl);
+		while(indeksPlavi >= 4 || indeksCrveni >= 4 || indeksPlavi == -2 || indeksCrveni == -2 || !postojiFajl);
 		
 		Algoritam algoritamPlavi = Igrac.getEnumAlgoritam(Igrac.algoritmi[indeksPlavi]);
 		Algoritam algoritamCrveni = Igrac.getEnumAlgoritam(Igrac.algoritmi[indeksCrveni]);

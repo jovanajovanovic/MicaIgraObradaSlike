@@ -2,6 +2,7 @@ package com.mica.algorithms;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 
@@ -10,7 +11,6 @@ import javax.swing.JOptionPane;
 import com.mica.main.Akcija;
 import com.mica.main.Controller;
 import com.mica.main.Klijent;
-import com.mica.main.Polje;
 import com.mica.main.PoljeAkcija;
 import com.mica.main.Pozicija;
 import com.mica.main.Stanje;
@@ -22,7 +22,7 @@ public class DeepReinforcementLearning {
 	private double epsilon; 
 	//private double zanemarivanje =  0.9;
 	
-	private int SUBSET_OF_REPLAY_MEMORY_MAX_SIZE = 100;
+	private int SUBSET_OF_REPLAY_MEMORY_MAX_SIZE = 500;
 	
 	private Random random = new Random();
 	
@@ -32,7 +32,7 @@ public class DeepReinforcementLearning {
 	public DeepReinforcementLearning() {
 		replayMemory = new ArrayList<Ishod>();
 		//tezine = new HashMap<String, Double>();
-		this.epsilon = 0.1;
+		this.epsilon = 1.0;
 	}
 	
 	public void isprazniReplayMemory() {
@@ -113,33 +113,43 @@ public class DeepReinforcementLearning {
 	}
 
 	private String getSelektovnaPoljaStr(ArrayList<PoljeAkcija> mogucaSelektovanaPoljaIAkcije) {
-		StringBuilder sb = new StringBuilder("");
-		Polje selektovanoPolje;
+		PoljeAkcija selektovanoPoljeAkcija;
+		int selektovanoPoljeInt;
 		
-		ArrayList<Polje> poljaKojaSuVecProsla = new ArrayList<Polje>();
-		boolean nijePotrebnoSelektovanoPolje = false;
+		HashMap<Integer, ArrayList<Akcija>> hm = new HashMap<Integer, ArrayList<Akcija>>();
 		
 		for(int i = 0; i < mogucaSelektovanaPoljaIAkcije.size(); i++) {
-			selektovanoPolje = mogucaSelektovanaPoljaIAkcije.get(i).getPolje();
-			if(selektovanoPolje != null) {
-				if(!poljaKojaSuVecProsla.contains(selektovanoPolje)) {
-					poljaKojaSuVecProsla.add(selektovanoPolje);
-					sb.append(";");
-					sb.append(selektovanoPolje.getPozicija().getX() * Controller.BROJ_POLJA_U_KRUGU + selektovanoPolje.getPozicija().getY());
-				}
+			selektovanoPoljeAkcija = mogucaSelektovanaPoljaIAkcije.get(i);
+			if(selektovanoPoljeAkcija.getPolje() != null) {
+				selektovanoPoljeInt = selektovanoPoljeAkcija.getPolje().getPozicija().getX() * Controller.BROJ_POLJA_U_KRUGU 
+						+ selektovanoPoljeAkcija.getPolje().getPozicija().getY();
+			}
+			else {
+				selektovanoPoljeInt = -1;
 			}
 			
-			if(mogucaSelektovanaPoljaIAkcije.get(i).getAkcija().ordinal() < 48) {
-				nijePotrebnoSelektovanoPolje = true;
+			if(!hm.containsKey(selektovanoPoljeInt)) {
+				hm.put(selektovanoPoljeInt, new ArrayList<Akcija>());
 			}
+			hm.get(selektovanoPoljeInt).add(selektovanoPoljeAkcija.getAkcija());
 			
 		}
 		
-		if(nijePotrebnoSelektovanoPolje) {
-			sb.append(";");
-			sb.append(-1);
-		}
+		StringBuilder sb = new StringBuilder("");
+		StringBuilder sb2;
 		
+		for (Integer key : hm.keySet()) {
+			sb.append(",");
+			sb2 = new StringBuilder("");
+			for (Akcija akcija : hm.get(key)) {
+				sb2.append(";");
+				sb2.append(akcija.ordinal());
+			}
+			sb.append(key);
+			sb.append(".");
+			sb.append(sb2.substring(1));
+			
+		}
 		return sb.substring(1);
 	}
 

@@ -33,7 +33,7 @@ public class ReinforcementLearning {
 		
 		System.out.println("Spreman! " + qVrednosti.size());
 		
-		this.epsilon = 0.1;
+		this.epsilon = 1.0;
 	}
 	
 	public HashMap<StanjeAkcija, QVrednost> getqVrednosti() {

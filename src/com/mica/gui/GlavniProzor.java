@@ -696,6 +696,7 @@ public class GlavniProzor extends JFrame {
 		panelZaComboBoxPlavog.add(plaviIgracLabel);
 		
 		JComboBox<String> comboPlavi = new JComboBox<String>(Igrac.algoritmiZaTrening);
+		comboPlavi.setSelectedIndex(2);
 		constraints.gridx = 1;
 		constraints.gridy = 0;
 		gridBagLayoutPanelZaComboBoxPlavog.setConstraints(comboPlavi, constraints);
@@ -708,6 +709,7 @@ public class GlavniProzor extends JFrame {
 		panelZaComboBoxCrvenog.add(crveniIgracLabel);
 		
 		JComboBox<String> comboCrveni = new JComboBox<String>(Igrac.algoritmiZaTrening);
+		comboCrveni.setSelectedIndex(2);
 		constraints.gridx = 1;
 		constraints.gridy = 0;
 		gridBagLayoutPanelZaComboBoxCrvenog.setConstraints(comboCrveni, constraints);
@@ -765,7 +767,8 @@ public class GlavniProzor extends JFrame {
 		gridBagLayoutMainPanel.setConstraints(panelZaSekunde, constraints);
 		mainPanel.add(panelZaSekunde);
 	    
-	    JSpinner spinnerEpsilon = new JSpinner(new SpinnerNumberModel(0.10, 0.00, 1.00, 0.01));
+		//JSpinner spinnerEpsilon = new JSpinner(new SpinnerNumberModel(0.10, 0.00, 1.00, 0.01));
+	    JSpinner spinnerEpsilon = new JSpinner(new SpinnerNumberModel(1.00, 0.00, 1.00, 0.01));
 	    spinnerEpsilon.getEditor().setPreferredSize(new Dimension(25, 15));
 	    JPanel panelZaEpsilon = pomocniPanel.napraviPanelZaEpsilon(spinnerEpsilon, true, false);
 	    ukluciIliIskluciPanelZaEpsilon(panelZaEpsilon, Igrac.getEnumAlgoritam((String) comboPlavi.getSelectedItem()), Igrac.getEnumAlgoritam((String) comboCrveni.getSelectedItem()));
@@ -776,7 +779,7 @@ public class GlavniProzor extends JFrame {
 	    
 	    constraints.gridx = 0;
 		constraints.gridy = 5;
-		ukluciIliIskluciCheckBoxZaPrikazTabelePanel(panelZaEpsilon, Igrac.getEnumAlgoritam((String) comboPlavi.getSelectedItem()), Igrac.getEnumAlgoritam((String) comboCrveni.getSelectedItem()));
+		ukluciIliIskluciCheckBoxZaPrikazTabelePanel(checkBoxZaPrikazTabelePanel, Igrac.getEnumAlgoritam((String) comboPlavi.getSelectedItem()), Igrac.getEnumAlgoritam((String) comboCrveni.getSelectedItem()));
 		gridBagLayoutMainPanel.setConstraints(checkBoxZaPrikazTabelePanel, constraints);
 		mainPanel.add(checkBoxZaPrikazTabelePanel);
 	    

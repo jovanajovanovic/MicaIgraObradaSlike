@@ -26,9 +26,12 @@ public class Klijent {
     	else port = SERVER_PORT;
     	
     	socket = new Socket(addr, port);
+ 
         in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
         out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())), true);
-
+     
+        if(neuralNetwork) data = data + "*";
+        
         out.println(data);
         System.out.println("zahtev poslat");
         
