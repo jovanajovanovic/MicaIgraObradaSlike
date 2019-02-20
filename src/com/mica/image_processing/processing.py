@@ -9,9 +9,13 @@ def start_processing(path):
     image = cv2.cvtColor(cv2.imread(path),cv2.COLOR_BGR2RGB)
     #pozvacemo funkciju za sredjivanje slike
     result = image_processing(image)
+    if result=="error":
+        #greska
+        return "Error!"
     # povratna vrednost je string
-    result += "|0,0"
-    return result #samo za probu
+    else :
+        result += "|0,0"
+        return result #samo za probu
 
 def image_processing(image):
     # priprema slike za isdvajanje figura
@@ -36,8 +40,8 @@ def processing(img_gray, value, original_img):
         del contours[index_of_biggest]
 
     if table_contour is not None:
-        circles = cv2.HoughCircles(image_gray, cv2.HOUGH_GRADIENT, 1, 10, param1=50, param2=30, minRadius=60,
-                                   maxRadius=150)
+        circles = cv2.HoughCircles(image_gray, cv2.HOUGH_GRADIENT, 1, 10, param1=50, param2=30, minRadius=55,
+                                   maxRadius=120)
         # zaokruzujemo sve na celobrojne vrednosti
         circles = np.uint32(np.around(circles))
         circles = circles[0, :]
@@ -68,18 +72,21 @@ def processing(img_gray, value, original_img):
                         print('indeks kruga: i= ' + str(i) + " j = " + str(j))
                         print('pozicija kruga: ' + str(matrix[i][j]['circle']))
                         print('rgb: ' + str(matrix[i][j]['rgb']))
-                        if (matrix[i][j]['rgb'][0] > 90):
-                            # red, prvi igrac 1
-                            print('crveni igrac: ' + str(matrix[i][j]['rgb'][0]))
-                            matrix[i][j]['player'] = 1
-                        elif (matrix[i][j]['rgb'][2] > 65):
+                        r = matrix[i][j]['rgb'][0]
+                        g = matrix[i][j]['rgb'][1]
+                        b = matrix[i][j]['rgb'][2]
+                        if ((g + 10) > r and (g - 10) < r and (g + 10) > b and (g - 10) < b):
+                            # crno, igrac 2
+                            print('crni igrac: ' + str(matrix[i][j]['rgb']))
+                            matrix[i][j]['player'] = 2
+                        elif (matrix[i][j]['rgb'][2] > matrix[i][j]['rgb'][0]):
                             # plavi - slobodno polje
                             print('slobodno polje: ' + str(matrix[i][j]['rgb'][2]))
                             matrix[i][j]['player'] = 0
-                        else:
-                            # crno, igrac 2
-                            print('crni igrac: ' + str(matrix[i][j]['rgb'][0]))
-                            matrix[i][j]['player'] = 2
+                        elif (matrix[i][j]['rgb'][0] > matrix[i][j]['rgb'][2]):
+                            # crveno
+                            print('crveni igrac: ' + str(matrix[i][j]['rgb'][0]))
+                            matrix[i][j]['player'] = 1
 
                 # ispritamo da li smo dobro dodelili figure
                 for i in range(0, 3):
@@ -130,10 +137,13 @@ def processing(img_gray, value, original_img):
             else:
                 print("Mora biti detektovano tacno 24 circles_without_duplicates, a sada je detektovano " + str(
                     len(circles_without_duplicates)))
+                return "error"
         else:
             print("Trenutno nema nijedan circles_without_duplicates!")
+            return "error"
     else:
         print("Error!")
+        return "error"
 
 
 def find_biggest_rectangle(contours):
