@@ -18,13 +18,13 @@ def start_server():
         s.bind((HOST, PORT))
         s.listen(5)
         
-        model = build_new_model_or_load_old_model(True)
-        target_model = build_new_model_or_load_old_model(True)
+        model = build_new_model_or_load_old_model()
+        target_model = build_new_model_or_load_old_model()
         
         while True:
             conn, addr = s.accept()
             with conn:
-                try:
+                #try:
                     print('Connected by', addr)
                     data = recvall(conn)
                     #print("bytes: " + str(len(data.decode().encode('utf-8'))))
@@ -70,8 +70,8 @@ def start_server():
                           conn.sendall("error".encode())
                     else:
                         raise Exception('Ovaj metod ne postoji!')
-                except:
-                    print("moj_error")
+                #except:
+                #    print("moj_error")
     print('start_server_nn end')
   
 def recvall(conn):
@@ -106,7 +106,7 @@ def get_selektovana_polja_i_akcije(s):
     for token in tokens:
         tokens2 = token.split('.')
         akcije = convert_to_int_array(tokens2[1])
-        selektovana_polja_i_akcije.append( (int(tokens2[0], akcije)) )
+        selektovana_polja_i_akcije.append( (int(tokens2[0]), akcije) )
         
     return selektovana_polja_i_akcije        
 

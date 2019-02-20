@@ -15,6 +15,7 @@ import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -68,6 +69,8 @@ public class GlavniProzor extends JFrame {
 	private Controller controller;
 	
 	private DialogZaCekanje dialogZaCekanje;
+	
+	private String defaultnaPutanjaDoSlike = new File ("./images/m.jpg").getAbsolutePath();
 	
 	public static Dimension SIZE_SCREEN = Toolkit.getDefaultToolkit().getScreenSize();
 	
@@ -509,7 +512,7 @@ public class GlavniProzor extends JFrame {
 		JPanel panelZaPutanjuDoSlike = new JPanel(new FlowLayout());
 		JLabel putanjaDoSlikeLabel = new JLabel("Putanja do slike:");
 		putanjaDoSlike = new JTextField(50);
-		putanjaDoSlike.setText("C:\\Users\\JOVO\\Desktop\\face.jpg");
+		putanjaDoSlike.setText(defaultnaPutanjaDoSlike);  // C:\\Users\\JOVO\\Desktop\\face.jpg
 		JButton pretrazi = new JButton("Pretrazi...");
 		pretrazi.addActionListener(new ActionListener() {
 					
@@ -767,8 +770,8 @@ public class GlavniProzor extends JFrame {
 		gridBagLayoutMainPanel.setConstraints(panelZaSekunde, constraints);
 		mainPanel.add(panelZaSekunde);
 	    
-		//JSpinner spinnerEpsilon = new JSpinner(new SpinnerNumberModel(0.10, 0.00, 1.00, 0.01));
-	    JSpinner spinnerEpsilon = new JSpinner(new SpinnerNumberModel(1.00, 0.00, 1.00, 0.01));
+		JSpinner spinnerEpsilon = new JSpinner(new SpinnerNumberModel(0.10, 0.00, 1.00, 0.01));
+	    //JSpinner spinnerEpsilon = new JSpinner(new SpinnerNumberModel(1.00, 0.00, 1.00, 0.01));
 	    spinnerEpsilon.getEditor().setPreferredSize(new Dimension(25, 15));
 	    JPanel panelZaEpsilon = pomocniPanel.napraviPanelZaEpsilon(spinnerEpsilon, true, false);
 	    ukluciIliIskluciPanelZaEpsilon(panelZaEpsilon, Igrac.getEnumAlgoritam((String) comboPlavi.getSelectedItem()), Igrac.getEnumAlgoritam((String) comboCrveni.getSelectedItem()));

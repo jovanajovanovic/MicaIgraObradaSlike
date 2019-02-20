@@ -10,7 +10,8 @@ tau = 0.125
 state_size = 33  # 32
 action_size = 76 
 path_to_model = "./model.json"
-path_to_weights = "./weights.h5" 
+path_to_weights = "./weights.h5"
+
 
 
 def build_new_model_or_load_old_model(load_ws=False):
@@ -25,8 +26,6 @@ def build_new_model_or_load_old_model(load_ws=False):
     model.compile(loss="mean_squared_error", optimizer=Adam(lr=learning_rate))
     # kompajliranje modela za multiklasnu klasifikaciju
     #model.compile(loss=keras.losses.categorical_crossentropy, optimizer=keras.optimizers.Adadelta(), metrics=['accuracy'])
-    
-    #model.summary()
     
     return model    
 
@@ -101,5 +100,4 @@ def save_model(model, path_to_model, path_to_weights):
     with open(path_to_model, "w") as json_file:
         json_file.write(model_json)
     model.save_weights(path_to_weights)
-    print("Saved model to disk")    
-
+    print("Saved model to disk")

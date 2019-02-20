@@ -245,6 +245,10 @@ public class Controller {
 						if(cekajObraduSlike) {
 							cekajObraduSlike = false;
 							glavniProzor.ukloniDialogZaCekanje();
+							if(odgovor.equals("Error!")) {
+								odgovor = null;
+								glavniProzor.dialogPocetni("Neuspesna obrada slike!");
+							}
 						}
 						else odgovor = null; // korisnik je ranije odusatao
 					}
@@ -659,16 +663,30 @@ public class Controller {
 	}
 	
 	private Potez odigrajPotezIEventualnoPojediProtivnikovuFiguru(Stanje stanje, boolean predvidjanjeProtivnikovogPoteza) throws Exception {
-		Igrac igrac;
-		if(stanje.getIgracNaPotezu() == TipPolja.PLAVO) igrac = stanje.getPlaviIgrac();
-		else igrac = stanje.getCrveniIgrac();
+		Igrac igrac, protivnik;
+		if(stanje.getIgracNaPotezu() == TipPolja.PLAVO) {
+			igrac = stanje.getPlaviIgrac();
+			protivnik = stanje.getCrveniIgrac();
+		}
+		else {
+			igrac = stanje.getCrveniIgrac();
+			protivnik = stanje.getPlaviIgrac();
+		}
 			
-		PoljeAkcija novoSelektovanoPoljeIAkcija;
+		PoljeAkcija novoSelektovanoPoljeIAkcija = null;
 		if(igrac.getAlgoritam() == Algoritam.RL) {
 			novoSelektovanoPoljeIAkcija = reinforcementLearning.getNovoSelektovanoPoljeIAkcija(stanje);
 		}
 		else if(igrac.getAlgoritam() == Algoritam.DEEP_RL) {
 			novoSelektovanoPoljeIAkcija = deepReinforcementLearning.getNovoSelektovanoPoljeIAkcija(stanje);
+		}
+		else if(igrac.getAlgoritam() == Algoritam.COVEK) {
+			if(protivnik.getAlgoritam() == Algoritam.RL) {
+				novoSelektovanoPoljeIAkcija = reinforcementLearning.getNovoSelektovanoPoljeIAkcija(stanje);
+			}
+			else if(protivnik.getAlgoritam() == Algoritam.DEEP_RL) {
+				novoSelektovanoPoljeIAkcija = deepReinforcementLearning.getNovoSelektovanoPoljeIAkcija(stanje);
+			}
 		}
 		else throw new Exception("Ovde algoritam moze biti ili Reinforcement Learning ili Deep Reinforcement Learning");
 		
@@ -940,7 +958,7 @@ public class Controller {
 		stanje.setSelektovanoPolje(polje);
 	}
 
-	private void pojediFiguru(Stanje stanje, boolean azurirajPomocniPanel) {
+	private void pojediFiguru(Stanje stanje, boolean azurirajPomocniPanel) throws Exception {
 		if(this.brojSekundiZaSpavanje > 0) {
 			try { Thread.sleep(this.brojSekundiZaSpavanje * 1000); } catch (InterruptedException e) {} // sacekaj onoliko sekundi koliko je zadato
 		}
@@ -954,7 +972,18 @@ public class Controller {
 			JedenjeFigure(stanje, protivnikovaPolja.get(indeksPoljaKojeTrebaPojesti), azurirajPomocniPanel);
 		}*/
 		
-		PoljeAkcija novoSelektovanoPoljeIAkcija = reinforcementLearning.getNovoSelektovanoPoljeIAkcija(stanje);
+		Algoritam algoritam;
+		if(stanje.getIgracNaPotezu() == TipPolja.PLAVO) algoritam = stanje.getPlaviIgrac().getAlgoritam();
+		else algoritam = stanje.getCrveniIgrac().getAlgoritam();
+			
+		PoljeAkcija novoSelektovanoPoljeIAkcija;
+		if(algoritam == Algoritam.RL) {
+			novoSelektovanoPoljeIAkcija = reinforcementLearning.getNovoSelektovanoPoljeIAkcija(stanje);
+		}
+		else if(algoritam == Algoritam.DEEP_RL) {
+			novoSelektovanoPoljeIAkcija = deepReinforcementLearning.getNovoSelektovanoPoljeIAkcija(stanje);
+		}
+		else throw new Exception("Ovde algoritam moze biti ili Reinforcement Learning ili Deep Reinforcement Learning");
 		
 		if(prikaziDialogTabelaAkcijaIQVrednosti) glavniProzor.prikaziTabeluAkcijaiQVrednosti(reinforcementLearning.getqVrednostiZaMoguceAkcije(), novoSelektovanoPoljeIAkcija);
 		
@@ -975,6 +1004,13 @@ public class Controller {
 				//double nagrada = stanje.izracunajScore(staroStanje.getIgracNaPotezu()) - stariScore;
 				double nagrada = trenutnoStanje.izracunajScore(staroStanje.getIgracNaPotezu());
 				reinforcementLearning.postaviNovuQVrednost(staroStanje, potez.getAkcija(), potencijalnoNovoStanje, nagrada);
+				if (algoritam == Algoritam.RL) {
+					reinforcementLearning.postaviNovuQVrednost(staroStanje, potez.getAkcija(), potencijalnoNovoStanje, nagrada);
+				}
+				else if(algoritam == Algoritam.DEEP_RL) {
+					deepReinforcementLearning.sacuvajNoviIshodUReplayMemory(staroStanje, potez.getAkcija(), potencijalnoNovoStanje, nagrada);
+					deepReinforcementLearning.odradiTreningNadSlucajnoOdabranimPodskupom();
+				}
 			}
 			else {
 				JOptionPane.showMessageDialog(null, "Potez == null prilikom jedenja, Prilikom jedenja", "Error", JOptionPane.ERROR_MESSAGE);

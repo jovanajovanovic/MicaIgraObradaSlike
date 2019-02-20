@@ -94,8 +94,8 @@ public class PomocniPanel extends JPanel {
 		
 		//northPanel.add(new JLabel("    "));
 		
-		//spinnerEpsilon = new JSpinner(new SpinnerNumberModel(0.10, 0.00, 1.00, 0.01));
-	    spinnerEpsilon = new JSpinner(new SpinnerNumberModel(1.00, 0.00, 1.00, 0.01));
+		spinnerEpsilon = new JSpinner(new SpinnerNumberModel(0.10, 0.00, 1.00, 0.01));
+	    //spinnerEpsilon = new JSpinner(new SpinnerNumberModel(1.00, 0.00, 1.00, 0.01));
 	    spinnerEpsilon.getEditor().setPreferredSize(new Dimension(25, 15));
 		
 		panelZaEpsilon = napraviPanelZaEpsilon(spinnerEpsilon, false, true);

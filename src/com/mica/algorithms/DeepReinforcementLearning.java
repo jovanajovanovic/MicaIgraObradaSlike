@@ -32,7 +32,7 @@ public class DeepReinforcementLearning {
 	public DeepReinforcementLearning() {
 		replayMemory = new ArrayList<Ishod>();
 		//tezine = new HashMap<String, Double>();
-		this.epsilon = 1.0;
+		this.epsilon = 0.10;
 	}
 	
 	public void isprazniReplayMemory() {
@@ -166,8 +166,9 @@ public class DeepReinforcementLearning {
 		try {
 			odgovor = klijent.posaljiPodatkeISacekajOdgovor("train|"+getStringForSubset(subset), true);
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			//JOptionPane.showMessageDialog(null, "Server je prekinuo konekciju i nije vratio odgovor.", "Greska", JOptionPane.ERROR_MESSAGE);
+			System.out.println("Server je prekinuo konekciju i nije vratio odgovor.");
+			return;
 		}
 		
 		if(odgovor.equals("error")) {
